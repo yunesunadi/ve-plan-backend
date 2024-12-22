@@ -1,6 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 
-const OrganizerSchema = new Schema({
+const UserSchema = new Schema({
+  profile: {
+    type: String,
+  },
   name: {
     type: String,
     required: true
@@ -15,8 +18,7 @@ const OrganizerSchema = new Schema({
     required: true,
   },
   role: {
-    type: String,
-    required: true
+    type: String
   },
   created_at: {
     type: Date,
@@ -28,4 +30,4 @@ const OrganizerSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("organizer", OrganizerSchema);
+module.exports = mongoose.model("user", UserSchema);
