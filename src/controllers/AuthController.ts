@@ -89,8 +89,14 @@ export async function role(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    console.log(req.user._id);
-    
+    const user = await UserService.findById(req.user._id);
+
+    if (user.role) {
+      return res.status(404).json({
+        status: "error",
+        message: "User role is already set."
+      });
+    }
   
     const set_role = await UserService.setRole(req.user._id, req.body.role);
     
