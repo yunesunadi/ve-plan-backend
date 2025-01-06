@@ -12,17 +12,22 @@ export async function register(req: Request, res: Response) {
     const hash = await bcrypt.hash(req.body.password, salt);
     const filename = req.file?.filename;
     
-    const user = await UserService.create({
+    let user = await UserService.create({
       profile: filename,
       name: req.body.name,
       email: req.body.email,
       password: hash
     });
 
+    user._id = user._id.toString();
+    user = user.toJSON();
+    delete user.password;
+    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+
     return res.status(201).json({
       status: "success",
-      message: "User is created successfully.",
-      data: user
+      message: "Register successfully.",
+      token
     });
   } catch (err: any) {
     console.log("err", err);
@@ -59,9 +64,10 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    delete user.password;
     user._id = user._id.toString();
-    const token = jwt.sign(user.toJSON(), `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+    user = user.toJSON();
+    delete user.password;
+    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
     
     return res.status(200).json({
       status: "success",
