@@ -1,4 +1,4 @@
-import mongoose, { isObjectIdOrHexString } from "mongoose";
+import mongoose from "mongoose";
 
 const UserModel = require("../models/User");
 
@@ -16,6 +16,10 @@ export function findById(_id: string) {
 
 export function setRole(id: string, role: string) {
   const _id = new mongoose.Types.ObjectId(id);
-
   return UserModel.findOneAndUpdate({ _id }, { role });
-} 
+}
+
+export async function getRole(_id: string) {
+  const { role } = await UserModel.findById({ _id });
+  return role;
+}
