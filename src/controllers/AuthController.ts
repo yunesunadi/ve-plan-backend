@@ -98,7 +98,7 @@ export async function role(req: any, res: Response) {
     const user = await UserService.findById(req.user._id);
 
     if (user.role) {
-      return res.status(404).json({
+      return res.status(403).json({
         status: "error",
         message: "User role is already set."
       });
@@ -107,7 +107,7 @@ export async function role(req: any, res: Response) {
     const set_role = await UserService.setRole(req.user._id, req.body.role);
     
     if(!set_role) {
-      return res.status(404).json({
+      return res.status(500).json({
         status: "error",
         message: "Cannot set role to user with this ID."
       });

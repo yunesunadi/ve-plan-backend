@@ -7,7 +7,7 @@ export async function hasRole(req: any, res: Response) {
     const role = await UserService.getRole(req.user._id);
     
     if (!role) {
-      return res.status(404).json({
+      return res.status(200).json({
         status: "error",
         message: "There is no role for this user.",
         has_role: false
