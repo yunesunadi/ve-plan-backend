@@ -17,7 +17,8 @@ export async function hasRole(req: any, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "User role is already set.",
-      has_role: true
+      has_role: true,
+      role
     });
  } catch (err: any) {
     console.log("err", err);
