@@ -25,7 +25,7 @@ app.use("/static", express.static("./assets/photos/profiles"));
 
 app.use(PREFIX + "/auth", authRouter);
 app.use(PREFIX + "/user", userRouter);
-app.use(PREFIX + "/event", eventRouter);
+app.use(PREFIX + "/events", eventRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });

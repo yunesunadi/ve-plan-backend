@@ -19,10 +19,17 @@ export async function create(req: Request, res: Response) {
       type: req.body.type,
     });
 
+    if (!event) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error creating event.",
+      });
+    } 
+
     return res.status(201).json({
       status: "success",
       message: "Create event successfully.",
-      event
+      data: event
     });
   } catch (err: any) {
     console.log("err", err);
@@ -32,4 +39,30 @@ export async function create(req: Request, res: Response) {
       error: err
     });
   }
+}
+
+export async function getAll(req: Request, res: Response) {
+  try {
+    const events = await EventService.getAll();
+
+    if (!events) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error fetching events."
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch events successfully.",
+      data: events
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
 }
