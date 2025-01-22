@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const EventService = require("../services/EventService");
 
-export async function create(req: Request, res: Response) {
+export async function create(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
@@ -17,6 +17,7 @@ export async function create(req: Request, res: Response) {
       end_time: req.body.end_time,
       category: req.body.category,
       type: req.body.type,
+      organizer_id: req.user._id
     });
 
     if (!event) {
@@ -41,9 +42,9 @@ export async function create(req: Request, res: Response) {
   }
 }
 
-export async function getAll(req: Request, res: Response) {
+export async function getAll(req: any, res: Response) {
   try {
-    const events = await EventService.getAll();
+    const events = await EventService.getAll(req.user._id);
 
     if (!events) {
       return res.status(500).json({
@@ -56,6 +57,32 @@ export async function getAll(req: Request, res: Response) {
       status: "success",
       message: "Fetch events successfully.",
       data: events
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getOneById(req: Request, res: Response) {
+  try {
+    const event = await EventService.getOneById(req.params.id);
+
+    if (!event[0]) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error fetching an event."
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch event successfully.",
+      data: event[0]
     });
   } catch (err: any) {
      console.log("err", err);

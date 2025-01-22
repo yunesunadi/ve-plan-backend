@@ -19,5 +19,6 @@ const cover_upload = multer({ dest: "src/assets/photos/covers/"});
 
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, EventController.create);
 router.get("/", jwtAuth, EventController.getAll);
+router.get("/:id", jwtAuth, EventController.getOneById);
 
 module.exports = router;

@@ -32,6 +32,10 @@ const EventSchema = new Schema({
     type: String,
     require: true,
   },
+  organizer_id: {
+    type: String,
+    require: true,
+  },
   created_at: {
     type: Date,
     default: Date.now
