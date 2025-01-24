@@ -1,18 +1,22 @@
+import { objectId } from "../helpers/utils";
+
 const EventModel = require("../models/Event");
 
 export function create(reqObj: any) {
   return EventModel.create(reqObj);
 }
 
-export function getAll(organizer_id: string) {
+export function getAll(id: string) {
+  const user = objectId(id);
   return EventModel.find({ 
     $or: [
-      { organizer_id },
+      { user },
       { type: "public" }
     ]
   });
 }
 
 export function getOneById(id: string) {
-  return EventModel.find({ _id: id });
+  const _id = objectId(id);
+  return EventModel.find({ _id }).populate("user");
 }

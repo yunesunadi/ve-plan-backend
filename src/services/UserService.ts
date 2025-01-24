@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import { objectId } from "../helpers/utils";
 
 const UserModel = require("../models/User");
 
@@ -10,16 +10,18 @@ export function findByEmail(email: string) {
   return UserModel.findOne({ email });
 }
 
-export function findById(_id: string) {
+export function findById(id: string) {
+  const _id = objectId(id);
   return UserModel.findById({ _id });
 }
 
 export function setRole(id: string, role: string) {
-  const _id = new mongoose.Types.ObjectId(id);
+  const _id = objectId(id);
   return UserModel.findOneAndUpdate({ _id }, { role });
 }
 
-export async function getRole(_id: string) {
+export async function getRole(id: string) {
+  const _id = objectId(id);
   const { role } = await UserModel.findById({ _id });
   return role;
 }

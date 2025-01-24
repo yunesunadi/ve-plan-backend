@@ -17,7 +17,7 @@ export async function create(req: any, res: Response) {
       end_time: req.body.end_time,
       category: req.body.category,
       type: req.body.type,
-      organizer_id: req.user._id
+      user: req.user._id
     });
 
     if (!event) {

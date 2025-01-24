@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
+import mongoose from "mongoose";
 
 export function isRequestInvalid(req: Request, res: Response) {
   const errors = validationResult(req);
@@ -14,4 +15,9 @@ export function isRequestInvalid(req: Request, res: Response) {
   }
 
   return false;
+}
+
+export function objectId(id: string) {
+  const _id = new mongoose.Types.ObjectId(id);
+  return _id;
 }

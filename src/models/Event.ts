@@ -32,9 +32,10 @@ const EventSchema = new Schema({
     type: String,
     require: true,
   },
-  organizer_id: {
-    type: String,
-    require: true,
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    // require: true,
   },
   created_at: {
     type: Date,
@@ -46,4 +47,4 @@ const EventSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("event", EventSchema);
+module.exports = mongoose.model("Event", EventSchema);

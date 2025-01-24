@@ -8,7 +8,7 @@ export async function hasRole(req: any, res: Response) {
     
     if (!role) {
       return res.status(200).json({
-        status: "error",
+        status: "success",
         message: "There is no role for this user.",
         has_role: false
       });
@@ -21,6 +21,32 @@ export async function hasRole(req: any, res: Response) {
       role
     });
  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function getAllById(req: any, res: Response) {
+  try {
+    const user = await UserService.findById(req.user._id);
+
+    if (!user) {
+      return res.status(500).json({
+        status: "error",
+        message: "Cannot find user with this ID."
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch user successfully.",
+      data: user
+    })
+  } catch (err: any) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
