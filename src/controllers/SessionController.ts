@@ -9,6 +9,7 @@ export async function create(req: any, res: Response) {
     let session = await SessionService.create({
       title: req.body.title,
       description: req.body.description,
+      speaker_info: req.body.speaker_info,
       start_time: req.body.start_time,
       end_time: req.body.end_time,
       event: req.body.event
@@ -38,7 +39,7 @@ export async function create(req: any, res: Response) {
 
 export async function getAll(req: any, res: Response) {
   try {
-    const sessions = await SessionService.getAll(req.event_id);
+    const sessions = await SessionService.getAll(req.headers["event-id"]);
 
     if (!sessions) {
       return res.status(404).json({

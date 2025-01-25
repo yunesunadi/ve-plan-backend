@@ -7,7 +7,9 @@ const SessionSchema = new Schema({
   },
   description: {
     type: String,
-    required: true
+  },
+  speaker_info: {
+    type: String,
   },
   start_time: {
     type: String,

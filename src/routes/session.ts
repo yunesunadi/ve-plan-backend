@@ -6,7 +6,6 @@ const jwtAuth = require("../middlewares/jwtAuth");
 
 const create_validation = [
   body("title", "Title is required.").notEmpty(),
-  body("description", "Description is required.").notEmpty(),
   body("start_time", "Start time is required.").notEmpty(),
   body("end_time", "End time is required.").notEmpty(),
   body("event", "Event ID is required.").notEmpty(),
