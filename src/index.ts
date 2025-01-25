@@ -5,6 +5,7 @@ import bodyParser from "body-parser";
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const eventRouter = require("./routes/event");
+const sessionRouter = require("./routes/session");
 
 require("dotenv").config();
 require("./libs/connectdb");
@@ -26,6 +27,7 @@ app.use("/static", express.static("./assets/photos/profiles"));
 app.use(PREFIX + "/auth", authRouter);
 app.use(PREFIX + "/user", userRouter);
 app.use(PREFIX + "/events", eventRouter);
+app.use(PREFIX + "/sessions", sessionRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });

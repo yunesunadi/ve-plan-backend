@@ -47,9 +47,9 @@ export async function getAll(req: any, res: Response) {
     const events = await EventService.getAll(req.user._id);
 
     if (!events) {
-      return res.status(500).json({
+      return res.status(404).json({
         status: "error",
-        message: "Error fetching events."
+        message: "There is no event found."
       });
     }
 
@@ -73,9 +73,9 @@ export async function getOneById(req: Request, res: Response) {
     const event = await EventService.getOneById(req.params.id);
 
     if (!event[0]) {
-      return res.status(500).json({
+      return res.status(404).json({
         status: "error",
-        message: "Error fetching an event."
+        message: "There is no event with this ID."
       });
     }
 

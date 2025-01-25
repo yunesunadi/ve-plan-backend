@@ -1,9 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const EventSchema = new Schema({
-  cover: {
-    type: String,
-  },
+const SessionSchema = new Schema({
   title: {
     type: String,
     required: true
@@ -11,10 +8,6 @@ const EventSchema = new Schema({
   description: {
     type: String,
     required: true
-  },
-  date: {
-    type: Date,
-    required: true,
   },
   start_time: {
     type: String,
@@ -24,17 +17,9 @@ const EventSchema = new Schema({
     type: String,
     require: true,
   },
-  category: {
-    type: String,
-    requrie: true,
-  },
-  type: {
-    type: String,
-    require: true,
-  },
-  user: {
+  event: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Event',
     require: true,
   },
   created_at: {
@@ -47,4 +32,4 @@ const EventSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("Event", EventSchema);
+module.exports = mongoose.model("Session", SessionSchema);
