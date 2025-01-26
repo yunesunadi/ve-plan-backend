@@ -10,3 +10,13 @@ export function getAll(id: string) {
   const event = objectId(id);
   return SessionModel.find({ event });
 }
+
+export function getOneById(id: string) {
+  const _id = objectId(id);
+  return SessionModel.find({ _id });
+}
+
+export function update(id: string, session: any) {
+  const _id = objectId(id);
+  return SessionModel.findOneAndUpdate({ _id }, session);
+}

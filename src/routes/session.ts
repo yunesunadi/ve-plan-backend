@@ -13,5 +13,7 @@ const create_validation = [
 
 router.post("/", create_validation, jwtAuth, SessionController.create);
 router.get("/", jwtAuth, SessionController.getAll);
+router.get("/:id", jwtAuth, SessionController.getOneById);
+router.put("/:id", create_validation, jwtAuth, SessionController.update);
 
 module.exports = router;
