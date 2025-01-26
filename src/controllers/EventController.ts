@@ -93,3 +93,42 @@ export async function getOneById(req: Request, res: Response) {
      });
    }
 }
+
+export async function update(req: any, res: Response) {
+  try {
+    if(isRequestInvalid(req, res)) return;
+    
+    let updated_data;
+
+    if (req.file) {
+      updated_data = {
+        cover: req.file.filename,
+        ...req.body
+      };
+    } else {
+      updated_data = req.body;
+    }
+    
+    let event = await EventService.update(req.params.id, updated_data);
+
+    if (!event) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error updating event.",
+      });
+    } 
+
+    return res.status(200).json({
+      status: "success",
+      message: "Update event successfully.",
+      data: event
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}

@@ -15,10 +15,11 @@ const create_validation = [
   body("type", "Type is required.").notEmpty(),
 ];
   
-const cover_upload = multer({ dest: "src/assets/photos/covers/"});
+const cover_upload = multer({ dest: "dist/photos/covers/"});
 
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, EventController.create);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
+router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, EventController.update);
 
 module.exports = router;

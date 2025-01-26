@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 const app = express();
 import cors from "cors";
 import bodyParser from "body-parser";
+import path from "path";
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const eventRouter = require("./routes/event");
@@ -22,7 +23,7 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use("/static", express.static("./assets/photos/profiles"));
+app.use(PREFIX + "/static", express.static(path.join(__dirname, "../dist/photos")));
 
 app.use(PREFIX + "/auth", authRouter);
 app.use(PREFIX + "/user", userRouter);

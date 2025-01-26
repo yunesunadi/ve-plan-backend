@@ -20,3 +20,8 @@ export function getOneById(id: string) {
   const _id = objectId(id);
   return EventModel.find({ _id }).populate("user");
 }
+
+export function update(id: string, event: any) {
+  const _id = objectId(id);
+  return EventModel.findOneAndUpdate({ _id }, event);
+}

@@ -23,7 +23,7 @@ const role_validation = [
   body("role", "Role is required.").notEmpty(),
 ];
 
-const profile_upload = multer({ dest: "src/assets/photos/profiles/"});
+const profile_upload = multer({ dest: "dist/photos/profiles/"});
 
 router.post("/register", profile_upload.single("profile"), register_validation, AuthController.register);
 router.post("/login", login_validation, AuthController.login);
