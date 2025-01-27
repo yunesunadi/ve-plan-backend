@@ -13,7 +13,7 @@ export function getAll(id: string) {
 
 export function getOneById(id: string) {
   const _id = objectId(id);
-  return SessionModel.find({ _id });
+  return SessionModel.findOne({ _id });
 }
 
 export function update(id: string, session: any) {

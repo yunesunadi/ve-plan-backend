@@ -67,7 +67,7 @@ export async function getOneById(req: Request, res: Response) {
   try {
     const session = await SessionService.getOneById(req.params.id);
 
-    if (!session[0]) {
+    if (!session) {
       return res.status(404).json({
         status: "error",
         message: "There is no session with this ID."
@@ -77,7 +77,7 @@ export async function getOneById(req: Request, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Fetch session successfully.",
-      data: session[0]
+      data: session
     });
   } catch (err: any) {
      console.log("err", err);

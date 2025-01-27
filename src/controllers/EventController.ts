@@ -72,7 +72,7 @@ export async function getOneById(req: Request, res: Response) {
   try {
     const event = await EventService.getOneById(req.params.id);
 
-    if (!event[0]) {
+    if (!event) {
       return res.status(404).json({
         status: "error",
         message: "There is no event with this ID."
@@ -82,7 +82,7 @@ export async function getOneById(req: Request, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Fetch event successfully.",
-      data: event[0]
+      data: event
     });
   } catch (err: any) {
      console.log("err", err);
@@ -131,4 +131,91 @@ export async function update(req: any, res: Response) {
       error: err
     });
   }
+}
+
+export async function register(req: any, res: Response) {
+  try {
+    if(isRequestInvalid(req, res)) return;
+
+    const register = await EventService.register({
+      event: req.body.event_id,
+      user: req.user._id
+    });
+
+    if (!register) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error registering event.",
+      });
+    } 
+
+    return res.status(201).json({
+      status: "success",
+      message: "Register event successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function unregister(req: any, res: Response) {
+  try {
+    if(isRequestInvalid(req, res)) return;
+
+    const register = await EventService.unregister({
+      event: req.params.id,
+      user: req.user._id
+    });
+
+    if (!register) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error unregistering event.",
+      });
+    } 
+
+    return res.status(200).json({
+      status: "success",
+      message: "Unegister event successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function hasRegistered(req: any, res: Response) {
+  try {
+    const registered_event = await EventService.getHasRegistered(req.params.id, req.user._id);
+
+    if (!registered_event) {
+      return res.status(200).json({
+        status: "success",
+        message: "This event hasn't been registered.",
+        has_registered: false,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "This event has been registered.",
+      has_registered: true,
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
 }
