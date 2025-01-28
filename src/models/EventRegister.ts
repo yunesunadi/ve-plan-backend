@@ -11,6 +11,14 @@ const EventRegisterSchema = new Schema({
     ref: 'User',
     require: true,
   },
+  register_completed: {
+    type: Boolean,
+    default: false,
+  },
+  invitation_sent: {
+    type: Boolean,
+    default: false,
+  },
   created_at: {
     type: Date,
     default: Date.now

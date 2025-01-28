@@ -15,18 +15,11 @@ const create_validation = [
   body("type", "Type is required.").notEmpty(),
 ];
 
-const register_validation = [
-  body("event_id", "Event ID is required.").notEmpty(),
-];
-  
 const cover_upload = multer({ dest: "dist/photos/covers/"});
 
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, EventController.create);
-router.post("/register", register_validation, jwtAuth, EventController.register);
-router.delete("/register/:id", jwtAuth, EventController.unregister);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
-router.get("/:id/registered", jwtAuth, EventController.hasRegistered);
 router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, EventController.update);
 
 module.exports = router;

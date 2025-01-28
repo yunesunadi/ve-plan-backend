@@ -7,6 +7,7 @@ const authRouter = require("./routes/auth");
 const userRouter = require("./routes/user");
 const eventRouter = require("./routes/event");
 const sessionRouter = require("./routes/session");
+const eventRegisterRouter = require("./routes/event_register");
 
 require("dotenv").config();
 require("./libs/connectdb");
@@ -29,6 +30,7 @@ app.use(PREFIX + "/auth", authRouter);
 app.use(PREFIX + "/user", userRouter);
 app.use(PREFIX + "/events", eventRouter);
 app.use(PREFIX + "/sessions", sessionRouter);
+app.use(PREFIX + "/event_registers", eventRegisterRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });
