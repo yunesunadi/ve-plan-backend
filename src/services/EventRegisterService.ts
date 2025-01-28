@@ -15,3 +15,8 @@ export function getHasRegistered(event_id: string, user_id: string) {
   const user = objectId(user_id);
   return EventRegisterModel.findOne({ event, user });
 }
+
+export function getAll(id: string) {
+  const event = objectId(id);
+  return EventRegisterModel.find({ event }).populate("user");
+}

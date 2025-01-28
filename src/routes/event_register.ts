@@ -11,5 +11,6 @@ const register_validation = [
 router.post("/", register_validation, jwtAuth, EventRegisterController.register);
 router.delete("/:id", jwtAuth, EventRegisterController.unregister);
 router.get("/:id", jwtAuth, EventRegisterController.hasRegistered);
+router.get("/:id/users", jwtAuth, EventRegisterController.getAll);
 
 module.exports = router;
