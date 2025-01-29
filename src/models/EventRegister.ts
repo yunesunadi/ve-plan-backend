@@ -11,7 +11,7 @@ const EventRegisterSchema = new Schema({
     ref: 'User',
     require: true,
   },
-  register_completed: {
+  register_approved: {
     type: Boolean,
     default: false,
   },
