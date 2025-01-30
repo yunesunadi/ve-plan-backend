@@ -20,3 +20,9 @@ export function getAll(id: string) {
   const event = objectId(id);
   return EventRegisterModel.find({ event }).populate("user").populate("event");
 }
+
+export function approveRegister(user_id: string, event_id: string) {
+  const user = objectId(user_id);
+  const event = objectId(event_id);
+  return EventRegisterModel.findOneAndUpdate({ user, event }, { register_approved: true });
+}

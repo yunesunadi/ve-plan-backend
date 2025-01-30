@@ -114,3 +114,29 @@ export async function getAll(req: Request, res: Response) {
      });
    }
 }
+
+export async function approveRegister(req: any, res: Response) {
+  try {
+    const register_approved = await EventRegisterService.approveRegister(req.body.user_id, req.body.event_id);
+
+    if (!register_approved) {
+      return res.status(500).json({
+        status: "success",
+        message: "Failed to approve registration.",
+        has_registered: false,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Registration has been successfully approved.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
