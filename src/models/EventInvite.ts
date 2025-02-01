@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const EventRegisterSchema = new Schema({
+const EventInviteSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
@@ -11,7 +11,11 @@ const EventRegisterSchema = new Schema({
     ref: 'User',
     require: true,
   },
-  register_approved: {
+  invitation_sent: {
+    type: Boolean,
+    default: true,
+  },
+  invitation_accepted: {
     type: Boolean,
     default: false,
   },
@@ -25,4 +29,4 @@ const EventRegisterSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model("EventRegister", EventRegisterSchema);
+module.exports = mongoose.model("EventInvite", EventInviteSchema);

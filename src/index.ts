@@ -9,6 +9,7 @@ const eventRouter = require("./routes/event");
 const sessionRouter = require("./routes/session");
 const eventRegisterRouter = require("./routes/event_register");
 const emailRouter = require("./routes/email");
+const eventInviteRouter = require("./routes/event_invite");
 
 require("dotenv").config();
 require("./libs/connectdb");
@@ -33,6 +34,7 @@ app.use(PREFIX + "/events", eventRouter);
 app.use(PREFIX + "/sessions", sessionRouter);
 app.use(PREFIX + "/event_registers", eventRegisterRouter);
 app.use(PREFIX + "/emails", emailRouter);
+app.use(PREFIX + "/event_invites", eventInviteRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });

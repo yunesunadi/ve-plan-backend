@@ -5,5 +5,6 @@ const jwtAuth = require("../middlewares/jwtAuth");
 
 router.get("/has_role", jwtAuth, UserController.hasRole);
 router.get("/:id", jwtAuth, UserController.getAllById);
+router.get("/", jwtAuth, UserController.getAttendeesByNameOrEmail);
 
 module.exports = router;

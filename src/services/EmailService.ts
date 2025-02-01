@@ -19,8 +19,15 @@ export async function send(obj: { action: string; recipient: string; additional:
         event_title: obj.additional.event_title,
       },
     };
-  } else if (obj.action === "") {
-
+  } else if (obj.action === "invitation_sent") {
+    msg = {
+      ...basic_info,
+      templateId: `${process.env.INVITATION_SENT_TEMPLATE}`,
+      dynamic_template_data: {
+        name: obj.additional.name,
+        event_title: obj.additional.event_title,
+      },
+    };
   }
 
   return sgMail.send(msg);

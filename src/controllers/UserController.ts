@@ -55,3 +55,29 @@ export async function getAllById(req: any, res: Response) {
     });
   }
 }
+
+export async function getAttendeesByNameOrEmail(req: any, res: Response) {
+  try {
+    const attendees = await UserService.findAttendeesByNameOrEmail(req.query.search);
+
+    if (attendees.length < 1) {
+      return res.status(200).json({
+        status: "success",
+        message: "Cannot find attendees with this keyword."
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch attendees successfully.",
+      data: attendees
+    })
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}

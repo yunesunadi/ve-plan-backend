@@ -25,3 +25,13 @@ export async function getRole(id: string) {
   const { role } = await UserModel.findById({ _id });
   return role;
 }
+
+export function findAttendeesByNameOrEmail(keyword: string) {
+  return UserModel.find({
+    $or: [
+      { name: { $regex: keyword, $options: 'i' } },
+      { email: { $regex: keyword, $options: 'i' } }
+    ],
+    role: "attendee"
+  });
+}
