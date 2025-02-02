@@ -6,14 +6,24 @@ export function invite(reqObj: any) {
   return EventInviteModel.create(reqObj);
 }
 
-export function getAll(id: string) {
+export function getAllByEventId(id: string) {
   const event = objectId(id);
   return EventInviteModel.find({ event }).populate("user").populate("event");
 }
 
-export function getAllAccepted(id: string) {
+export function getAllAcceptedByEventId(id: string) {
   const event = objectId(id);
   return EventInviteModel.find({ event, invitation_accepted: true }).populate("user").populate("event");
+}
+
+export function getAllByUserId(id: string) {
+  const user = objectId(id);
+  return EventInviteModel.find({ user }).populate("user").populate("event");
+}
+
+export function getAllAcceptedByUserId(id: string) {
+  const user = objectId(id);
+  return EventInviteModel.find({ user, invitation_accepted: true }).populate("user").populate("event");
 }
 
 export function acceptInvite(user_id: string, event_id: string) {

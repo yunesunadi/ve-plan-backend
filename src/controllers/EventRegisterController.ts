@@ -89,14 +89,33 @@ export async function hasRegistered(req: any, res: Response) {
    }
 }
 
-export async function getAll(req: Request, res: Response) {
+export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const registered_users = await EventRegisterService.getAll(req.params.id);
+    const registered_users = await EventRegisterService.getAllByEventId(req.params.id);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch registered users successfully.",
       data: registered_users
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getAllByUserId(req: any, res: Response) {
+  try {
+    const registered_events = await EventRegisterService.getAllByUserId(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch registered events successfully.",
+      data: registered_events
     });
   } catch (err: any) {
      console.log("err", err);

@@ -32,9 +32,9 @@ export async function invite(req: any, res: Response) {
   }
 }
 
-export async function getAll(req: Request, res: Response) {
+export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const invited_users = await EventInviteService.getAll(req.params.id);
+    const invited_users = await EventInviteService.getAllByEventId(req.params.id);
 
     return res.status(200).json({
       status: "success",
@@ -51,14 +51,52 @@ export async function getAll(req: Request, res: Response) {
    }
 }
 
-export async function getAllAccepted(req: Request, res: Response) {
+export async function getAllAcceptedByEventId(req: Request, res: Response) {
   try {
-    const invite_accepted_users = await EventInviteService.getAllAccepted(req.params.id);
+    const invite_accepted_users = await EventInviteService.getAllAcceptedByEventId(req.params.id);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch invitation accepted users successfully.",
       data: invite_accepted_users
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getAllByUserId(req: any, res: Response) {
+  try {
+    const invited_events = await EventInviteService.getAllByUserId(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch invited events successfully.",
+      data: invited_events
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getAllAcceptedByUserId(req: any, res: Response) {
+  try {
+    const invite_accepted_events = await EventInviteService.getAllAcceptedByUserId(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch invitation accepted events successfully.",
+      data: invite_accepted_events
     });
   } catch (err: any) {
      console.log("err", err);

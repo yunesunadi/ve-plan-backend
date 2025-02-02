@@ -14,8 +14,10 @@ const accept_validation = [
 ];
 
 router.post("/", invite_validation, jwtAuth, EventInviteController.invite);
-router.get("/:id/users", jwtAuth, EventInviteController.getAll);
-router.get("/:id/accepted_users", jwtAuth, EventInviteController.getAllAccepted);
+router.get("/events", jwtAuth, EventInviteController.getAllByUserId);
+router.get("/accepted_events", jwtAuth, EventInviteController.getAllAcceptedByUserId);
+router.get("/:id/users", jwtAuth, EventInviteController.getAllByEventId);
+router.get("/:id/accepted_users", jwtAuth, EventInviteController.getAllAcceptedByEventId);
 router.put("/accept", accept_validation, jwtAuth, EventInviteController.acceptInvite);
 
 module.exports = router;
