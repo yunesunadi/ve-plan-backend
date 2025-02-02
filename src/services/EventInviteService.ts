@@ -16,7 +16,7 @@ export function getAllAccepted(id: string) {
   return EventInviteModel.find({ event, invitation_accepted: true }).populate("user").populate("event");
 }
 
-export function approveRegister(user_id: string, event_id: string) {
+export function acceptInvite(user_id: string, event_id: string) {
   const user = objectId(user_id);
   const event = objectId(event_id);
   return EventInviteModel.findOneAndUpdate({ user, event }, { invitation_accepted: true });

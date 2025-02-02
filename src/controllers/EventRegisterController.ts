@@ -93,13 +93,6 @@ export async function getAll(req: Request, res: Response) {
   try {
     const registered_users = await EventRegisterService.getAll(req.params.id);
 
-    if (registered_users.length < 1) {
-      return res.status(200).json({
-        status: "error",
-        message: "There is no registered user in this event."
-      });
-    }
-
     return res.status(200).json({
       status: "success",
       message: "Fetch registered users successfully.",

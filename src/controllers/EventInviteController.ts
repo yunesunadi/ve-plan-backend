@@ -36,13 +36,6 @@ export async function getAll(req: Request, res: Response) {
   try {
     const invited_users = await EventInviteService.getAll(req.params.id);
 
-    if (invited_users.length < 1) {
-      return res.status(200).json({
-        status: "error",
-        message: "There is no invited user in this event."
-      });
-    }
-
     return res.status(200).json({
       status: "success",
       message: "Fetch invited users successfully.",
@@ -61,13 +54,6 @@ export async function getAll(req: Request, res: Response) {
 export async function getAllAccepted(req: Request, res: Response) {
   try {
     const invite_accepted_users = await EventInviteService.getAllAccepted(req.params.id);
-
-    if (invite_accepted_users.length < 1) {
-      return res.status(200).json({
-        status: "error",
-        message: "There is no invitation accepted user in this event."
-      });
-    }
 
     return res.status(200).json({
       status: "success",
