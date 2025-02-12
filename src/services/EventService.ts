@@ -17,11 +17,9 @@ export function getAll(id: string) {
 }
 
 export function getOneById(id: string) {
-  const _id = objectId(id);
-  return EventModel.findOne({ _id }).populate("user");
+  return EventModel.findById(objectId(id)).populate("user", "-password");
 }
 
 export function update(id: string, event: any) {
-  const _id = objectId(id);
-  return EventModel.findOneAndUpdate({ _id }, event);
+  return EventModel.findByIdAndUpdate(objectId(id), event, { new: true });
 }

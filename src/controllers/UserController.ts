@@ -4,7 +4,7 @@ const UserService = require("../services/UserService");
 
 export async function hasRole(req: any, res: Response) {
   try {
-    const role = await UserService.getRole(req.user._id);
+    const { role } = await UserService.getRole(req.user._id);
     
     if (!role) {
       return res.status(200).json({

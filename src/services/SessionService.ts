@@ -12,11 +12,9 @@ export function getAll(id: string) {
 }
 
 export function getOneById(id: string) {
-  const _id = objectId(id);
-  return SessionModel.findOne({ _id });
+  return SessionModel.findById(objectId(id));
 }
 
 export function update(id: string, session: any) {
-  const _id = objectId(id);
-  return SessionModel.findOneAndUpdate({ _id }, session);
+  return SessionModel.findByIdAndUpdate(objectId(id), session, { new: true });
 }

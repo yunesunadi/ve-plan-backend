@@ -11,27 +11,25 @@ export function findByEmail(email: string) {
 }
 
 export function findById(id: string) {
-  const _id = objectId(id);
-  return UserModel.findById({ _id });
+  return UserModel.findById(objectId(id)).select("-password");
 }
 
 export function setRole(id: string, role: string) {
-  const _id = objectId(id);
-  return UserModel.findOneAndUpdate({ _id }, { role });
+  return UserModel.findByIdAndUpdate(objectId(id), { role }, { new: true });
 }
 
-export async function getRole(id: string) {
-  const _id = objectId(id);
-  const { role } = await UserModel.findById({ _id });
-  return role;
+export function getRole(id: string) {
+  return UserModel.findById(objectId(id)).select("role");
 }
 
 export function findAttendeesByNameOrEmail(keyword: string) {
-  return UserModel.find({
-    $or: [
-      { name: { $regex: keyword, $options: 'i' } },
-      { email: { $regex: keyword, $options: 'i' } }
-    ],
-    role: "attendee"
-  });
+  return UserModel
+    .find({
+      $or: [
+        { name: { $regex: keyword, $options: 'i' } },
+        { email: { $regex: keyword, $options: 'i' } }
+      ],
+      role: "attendee"
+    })
+    .select("-password");
 }

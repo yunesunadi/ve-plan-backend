@@ -15,14 +15,10 @@ const EventRegisterSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
-  },
+},
+{ 
+  timestamps: true,
+  versionKey: false
 });
 
 module.exports = mongoose.model("EventRegister", EventRegisterSchema);

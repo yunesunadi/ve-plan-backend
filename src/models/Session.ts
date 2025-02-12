@@ -24,14 +24,10 @@ const SessionSchema = new Schema({
     ref: 'Event',
     require: true,
   },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
-  },
+},
+{ 
+  timestamps: true,
+  versionKey: false
 });
 
 module.exports = mongoose.model("Session", SessionSchema);

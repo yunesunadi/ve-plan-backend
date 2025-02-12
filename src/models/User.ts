@@ -18,16 +18,13 @@ const UserSchema = new Schema({
     required: true,
   },
   role: {
-    type: String
+    type: String,
+    enum: ["organizer", "attendee"]
   },
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  updated_at: {
-    type: Date,
-    default: Date.now
-  },
+},
+{ 
+  timestamps: true,
+  versionKey: false
 });
 
 module.exports = mongoose.model("User", UserSchema);

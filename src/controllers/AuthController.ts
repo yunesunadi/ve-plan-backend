@@ -11,6 +11,15 @@ export async function register(req: Request, res: Response) {
     const salt = await bcrypt.genSalt();
     const hash = await bcrypt.hash(req.body.password, salt);
     const filename = req.file?.filename;
+
+    const existed_user = await UserService.findByEmail(req.body.email);
+
+    if (existed_user) {
+      return res.status(500).json({
+        status: "error",
+        message: "User with this email is already existed.",
+      });
+    }
     
     let user = await UserService.create({
       profile: filename,
@@ -22,6 +31,7 @@ export async function register(req: Request, res: Response) {
     user._id = user._id.toString();
     user = user.toJSON();
     delete user.password;
+    delete user.__v;
     const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
 
     return res.status(201).json({

@@ -18,16 +18,16 @@ export function getHasRegistered(event_id: string, user_id: string) {
 
 export function getAllByEventId(id: string) {
   const event = objectId(id);
-  return EventRegisterModel.find({ event }).populate("user").populate("event");
+  return EventRegisterModel.find({ event }).populate("user", "-password").populate("event");
 }
 
 export function getAllByUserId(user_id: string) {
   const user = objectId(user_id);
-  return EventRegisterModel.find({ user, register_approved: true }).populate("user").populate("event");
+  return EventRegisterModel.find({ user, register_approved: true }).populate("user", "-password").populate("event");
 }
 
 export function approveRegister(user_id: string, event_id: string) {
   const user = objectId(user_id);
   const event = objectId(event_id);
-  return EventRegisterModel.findOneAndUpdate({ user, event }, { register_approved: true });
+  return EventRegisterModel.findOneAndUpdate({ user, event }, { register_approved: true }, { new: true });
 }
