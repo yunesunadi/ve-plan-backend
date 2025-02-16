@@ -1,5 +1,4 @@
-import { Request, Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { Response } from "express";
 const UserService = require("../services/UserService");
 
 export async function hasRole(req: any, res: Response) {

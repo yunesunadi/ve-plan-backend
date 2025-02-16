@@ -7,8 +7,8 @@ export async function send(req: any, res: Response) {
       action: req.body.action,
       recipient: req.body.recipient,
       additional: {
-        name: req.body.name,
-        event_title: req.body.event_title,
+        name: req.body.additional.name,
+        event_title: req.body.additional.event_title,
       }
     });
 

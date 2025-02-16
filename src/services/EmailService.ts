@@ -14,7 +14,7 @@ export async function send(obj: { action: string; recipient: string; additional:
     msg = {
       ...basic_info,
       templateId: `${process.env.REGISTER_APPROVAL_TEMPLATE}`,
-      dynamic_template_data: {
+      dynamicTemplateData: {
         name: obj.additional.name,
         event_title: obj.additional.event_title,
       },
@@ -23,7 +23,7 @@ export async function send(obj: { action: string; recipient: string; additional:
     msg = {
       ...basic_info,
       templateId: `${process.env.INVITATION_SENT_TEMPLATE}`,
-      dynamic_template_data: {
+      dynamicTemplateData: {
         name: obj.additional.name,
         event_title: obj.additional.event_title,
       },
