@@ -135,13 +135,37 @@ export async function approveRegister(req: any, res: Response) {
       return res.status(500).json({
         status: "success",
         message: "Failed to approve registration.",
-        has_registered: false,
       });
     }
 
     return res.status(200).json({
       status: "success",
       message: "Registration has been successfully approved.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function startMeeting(req: any, res: Response) {
+  try {
+    const meeting_started = await EventRegisterService.startMeeting(req.body.user_id, req.body.event_id);
+
+    if (!meeting_started) {
+      return res.status(500).json({
+        status: "success",
+        message: "Failed to send meeting email.",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Meeting email has been successfully sent.",
     });
   } catch (err: any) {
     console.log("err", err);

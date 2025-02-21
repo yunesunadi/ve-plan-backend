@@ -31,3 +31,9 @@ export function approveRegister(user_id: string, event_id: string) {
   const event = objectId(event_id);
   return EventRegisterModel.findOneAndUpdate({ user, event }, { register_approved: true }, { new: true });
 }
+
+export function startMeeting(user_id: string, event_id: string) {
+  const user = objectId(user_id);
+  const event = objectId(event_id);
+  return EventRegisterModel.findOneAndUpdate({ user, event }, { meeting_started: true }, { new: true });
+}

@@ -19,5 +19,6 @@ router.get("/events", jwtAuth, EventRegisterController.getAllByUserId);
 router.get("/:id", jwtAuth, EventRegisterController.hasRegistered);
 router.get("/:id/users", jwtAuth, EventRegisterController.getAllByEventId);
 router.put("/approve", approve_validation, jwtAuth, EventRegisterController.approveRegister);
+router.put("/meeting_started", approve_validation, jwtAuth, EventRegisterController.startMeeting);
 
 module.exports = router;

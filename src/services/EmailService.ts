@@ -28,6 +28,15 @@ export async function send(obj: { action: string; recipient: string; additional:
         event_title: obj.additional.event_title,
       },
     };
+  } else if (obj.action === "meeting_started") {
+    msg = {
+      ...basic_info,
+      templateId: `${process.env.MEETING_STARTED_TEMPLATE}`,
+      dynamicTemplateData: {
+        name: obj.additional.name,
+        event_title: obj.additional.event_title,
+      },
+    };
   }
 
   return sgMail.send(msg);

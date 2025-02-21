@@ -19,5 +19,6 @@ router.get("/accepted_events", jwtAuth, EventInviteController.getAllAcceptedByUs
 router.get("/:id/users", jwtAuth, EventInviteController.getAllByEventId);
 router.get("/:id/accepted_users", jwtAuth, EventInviteController.getAllAcceptedByEventId);
 router.put("/accept", accept_validation, jwtAuth, EventInviteController.acceptInvite);
+router.put("/meeting_started", invite_validation, jwtAuth, EventInviteController.startMeeting);
 
 module.exports = router;

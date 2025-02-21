@@ -15,6 +15,10 @@ const EventRegisterSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  meeting_started: {
+    type: Boolean,
+    default: false,
+  }
 },
 { 
   timestamps: true,

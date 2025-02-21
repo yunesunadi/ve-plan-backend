@@ -4,7 +4,7 @@ const MeetingService = require("../services/MeetingService");
 
 export async function createToken(req: any, res: Response) {
   try { 
-    const meeting_token = await MeetingService.createToken(req.user.name, req.user.email);
+    const meeting_token = await MeetingService.createToken(req.user.name, req.user.email, req.body.is_moderator);
 
     if (!meeting_token) {
       return res.status(500).json({
@@ -86,4 +86,69 @@ export async function isCreated(req: any, res: Response) {
       error: err
     });
   }
+}
+
+export async function isStarted(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneByEventId(req.params.id);
+    
+    if (!meeting) {
+      return res.status(200).json({
+        status: "success",
+        message: "There is no meeting for this event.",
+        is_created: false
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Meeting for this event has already started.",
+      is_started: true,
+    });
+ } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function getOneById(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch meeting successfully.",
+      data: meeting
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getOneByEventId(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneByEventId(req.params.id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch meeting successfully.",
+      data: meeting
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
 }

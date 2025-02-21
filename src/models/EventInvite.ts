@@ -18,6 +18,10 @@ const EventInviteSchema = new Schema({
   invitation_accepted: {
     type: Boolean,
     default: false,
+  },
+  meeting_started: {
+    type: Boolean,
+    default: false,
   }
 },
 { 

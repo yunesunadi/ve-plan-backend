@@ -31,3 +31,9 @@ export function acceptInvite(user_id: string, event_id: string) {
   const event = objectId(event_id);
   return EventInviteModel.findOneAndUpdate({ user, event }, { invitation_accepted: true }, { new: true });
 }
+
+export function startMeeting(user_id: string, event_id: string) {
+  const user = objectId(user_id);
+  const event = objectId(event_id);
+  return EventInviteModel.findOneAndUpdate({ user, event }, { meeting_started: true }, { new: true });
+}
