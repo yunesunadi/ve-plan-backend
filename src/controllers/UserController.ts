@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { isRequestInvalid } from "../helpers/utils";
 const UserService = require("../services/UserService");
 
 export async function hasRole(req: any, res: Response) {
@@ -71,6 +72,43 @@ export async function getAttendeesByNameOrEmail(req: any, res: Response) {
       message: "Fetch attendees successfully.",
       data: attendees
     })
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function update(req: any, res: Response) {
+  try {    
+    if(isRequestInvalid(req, res)) return;
+
+    const filename = req.file?.filename;
+    const existed_user = await UserService.findByEmail(req.body.email);
+
+    if (req.user.email !== req.body.email && existed_user) {
+      return res.status(500).json({
+        status: "error",
+        message: "User with this email is already existed.",
+      });
+    }
+
+    await UserService.update(
+      req.user._id,
+      {
+        profile: filename,
+        name: req.body.name,
+        email: req.body.email,
+      }
+    );
+
+    return res.status(200).json({
+      status: "success",
+      message: "Update user successfully.",
+    });
   } catch (err: any) {
     console.log("err", err);
     return res.status(500).json({

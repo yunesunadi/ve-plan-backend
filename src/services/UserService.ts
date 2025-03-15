@@ -33,3 +33,14 @@ export function findAttendeesByNameOrEmail(keyword: string) {
     })
     .select("-password");
 }
+
+export function update(id: string, data: any) {
+  return UserModel.findOneAndUpdate(
+    { _id: objectId(id) },
+    {
+      profile: data.profile,
+      name: data.name,
+      email: data.email
+    }
+  );
+}
