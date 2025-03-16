@@ -44,3 +44,7 @@ export function update(id: string, data: any) {
     }
   );
 }
+
+export function updatePassword(id: string, password: string) {
+  return UserModel.findOneAndUpdate({ _id: objectId(id) }, { password });
+}
