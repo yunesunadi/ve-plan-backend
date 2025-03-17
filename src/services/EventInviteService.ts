@@ -37,3 +37,9 @@ export function startMeeting(user_id: string, event_id: string) {
   const event = objectId(event_id);
   return EventInviteModel.findOneAndUpdate({ user, event }, { meeting_started: true }, { new: true });
 }
+
+export function getHasInvited(event_id: string, user_id: string) {
+  const event = objectId(event_id);
+  const user = objectId(user_id);
+  return EventInviteModel.findOne({ event, user });
+}

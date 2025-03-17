@@ -1,6 +1,8 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const MeetingService = require("../services/MeetingService");
+const EventRegisterService = require("../services/EventRegisterService");
+const EventInviteService = require("../services/EventInviteService");
 
 export async function createToken(req: any, res: Response) {
   try { 
@@ -91,19 +93,21 @@ export async function isCreated(req: any, res: Response) {
 export async function isStarted(req: any, res: Response) {
   try {
     const meeting = await MeetingService.getOneByEventId(req.params.id);
+    const registered = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
+    const invited = await EventInviteService.getHasInvited(req.params.id, req.user._id);
     
-    if (!meeting) {
+    if (meeting && (registered || invited)) {
       return res.status(200).json({
         status: "success",
-        message: "There is no meeting for this event.",
-        is_created: false
+        message: "Meeting for this event has already started.",
+        is_started: true,
       });
     }
 
     return res.status(200).json({
       status: "success",
-      message: "Meeting for this event has already started.",
-      is_started: true,
+      message: "There is no meeting for this event.",
+      is_started: false
     });
  } catch (err: any) {
     console.log("err", err);
