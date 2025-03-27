@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 
-const MeetingSchema = new Schema({
+const ParticipantSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
@@ -15,14 +15,10 @@ const MeetingSchema = new Schema({
     type: String,
     require: true,
   },
-  token: {
-    type: String,
-    require: true,
-  },
   start_time: {
     type: Date,
     require: false,
-    default: null
+    default: Date.now
   },
   end_time: {
     type: Date,
@@ -39,4 +35,4 @@ const MeetingSchema = new Schema({
   versionKey: false
 });
 
-module.exports = mongoose.model("Meeting", MeetingSchema);
+module.exports = mongoose.model("Participant", ParticipantSchema);
