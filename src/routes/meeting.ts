@@ -14,6 +14,7 @@ router.post("/", create_validation, jwtAuth, MeetingController.create);
 router.post("/token", jwtAuth, MeetingController.createToken);
 router.get("/:id/is_created", jwtAuth, MeetingController.isCreated);
 router.get("/:id/is_started", jwtAuth, MeetingController.isStarted);
+router.get("/:id/is_expired", jwtAuth, MeetingController.isExpired);
 router.get("/:id/attendee", jwtAuth, MeetingController.getOneByEventId);
 router.get("/:id", jwtAuth, MeetingController.getOneById);
 

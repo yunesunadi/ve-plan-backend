@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
+import { jwtDecode } from "jwt-decode";
 const MeetingService = require("../services/MeetingService");
 const EventRegisterService = require("../services/EventRegisterService");
 const EventInviteService = require("../services/EventInviteService");
@@ -155,4 +156,33 @@ export async function getOneByEventId(req: any, res: Response) {
        error: err
      });
    }
+}
+
+export async function isExpired(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneByEventId(req.params.id);
+    const expire_time = jwtDecode(meeting.token).exp || 0;
+    const current_time = new Date();
+
+    if (expire_time - current_time.getTime() < (60 * 1000)) {
+      return res.status(200).json({
+        status: "success",
+        message: "Meeting is expired.",
+        is_expired: true
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Meeting isn't expired.",
+      is_expired: false
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
 }
