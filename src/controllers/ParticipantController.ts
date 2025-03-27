@@ -43,9 +43,11 @@ export async function update(req: any, res: Response) {
     if(isRequestInvalid(req, res)) return;
 
     const participant = await ParticipantService.getOne(req.params.id, req.user._id);
+    const milisecond = new Date(req.body.end_time).getTime() - new Date(participant.start_time).getTime();
+    const minute = Math.round(milisecond / 60000);
     const updated_participant = await ParticipantService.update(participant._id, {
       ...req.body,
-      duration: new Date(req.body.end_time).getMinutes() - new Date(participant.start_time).getMinutes()
+      duration: minute
     });
     
     if (!updated_participant) {
@@ -69,3 +71,40 @@ export async function update(req: any, res: Response) {
   }
 }
 
+export async function getOne(req: any, res: Response) {
+  try {
+    const participant = await ParticipantService.getOne(req.params.id, req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch participant successfully.",
+      data: participant
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function getAll(req: any, res: Response) {
+  try {
+    const participants = await ParticipantService.getAll(req.params.id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch participant successfully.",
+      data: participants
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}

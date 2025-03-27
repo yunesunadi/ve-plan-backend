@@ -15,3 +15,8 @@ export function create(reqObj: any) {
 export function update(id: string, participant: any) {
   return ParticipantModel.findByIdAndUpdate(objectId(id), participant, { new: true });
 }
+
+export function getAll(event_id: string) {
+  const event = objectId(event_id);
+  return ParticipantModel.findOne({ event });
+}

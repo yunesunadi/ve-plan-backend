@@ -16,5 +16,7 @@ const update_validation = [
 
 router.post("/", create_validation, jwtAuth, ParticipantController.create);
 router.put("/:id", update_validation, jwtAuth, ParticipantController.update);
+router.get("/:id/all", jwtAuth, ParticipantController.getAll);
+router.get("/:id", jwtAuth, ParticipantController.getOne);
 
 module.exports = router;
