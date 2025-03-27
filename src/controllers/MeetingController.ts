@@ -161,10 +161,10 @@ export async function getOneByEventId(req: any, res: Response) {
 export async function isExpired(req: any, res: Response) {
   try {
     const meeting = await MeetingService.getOneByEventId(req.params.id);
-    const expire_time = jwtDecode(meeting.token).exp || 0;
-    const current_time = new Date();
+    const current_time = new Date().getTime();
+    const expired_time =  jwtDecode(meeting.token).exp || current_time;
 
-    if (expire_time - current_time.getTime() < (60 * 1000)) {
+    if ((current_time - expired_time) < (60 * 1000)) {
       return res.status(200).json({
         status: "success",
         message: "Meeting is expired.",
