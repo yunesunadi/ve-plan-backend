@@ -11,12 +11,11 @@ const create_validation = [
 ];
 
 const update_validation = [
-  body("end_time", "Start time is required.").notEmpty(),
+  body("end_time", "End time is required.").notEmpty(),
 ];
 
 router.post("/", create_validation, jwtAuth, ParticipantController.create);
 router.put("/:id", update_validation, jwtAuth, ParticipantController.update);
-router.get("/:id/all", jwtAuth, ParticipantController.getAll);
-router.get("/:id", jwtAuth, ParticipantController.getOne);
+router.get("/:id", jwtAuth, ParticipantController.getAll);
 
 module.exports = router;

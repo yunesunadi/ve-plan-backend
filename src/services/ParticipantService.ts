@@ -18,5 +18,5 @@ export function update(id: string, participant: any) {
 
 export function getAll(event_id: string) {
   const event = objectId(event_id);
-  return ParticipantModel.findOne({ event });
+  return ParticipantModel.find({ event }).populate("user", "-password");
 }

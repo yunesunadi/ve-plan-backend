@@ -71,25 +71,6 @@ export async function update(req: any, res: Response) {
   }
 }
 
-export async function getOne(req: any, res: Response) {
-  try {
-    const participant = await ParticipantService.getOne(req.params.id, req.user._id);
-
-    return res.status(200).json({
-      status: "success",
-      message: "Fetch participant successfully.",
-      data: participant
-    });
-  } catch (err: any) {
-    console.log("err", err);
-    return res.status(500).json({
-      status: "error",
-      message: "Something went wrong.",
-      error: err
-    });
-  }
-}
-
 export async function getAll(req: any, res: Response) {
   try {
     const participants = await ParticipantService.getAll(req.params.id);

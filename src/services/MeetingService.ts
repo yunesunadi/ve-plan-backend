@@ -49,3 +49,7 @@ export function getOneById(event_id: string, user_id: string) {
 export function getOneByEventId(event_id: string) {
   return MeetingModel.findOne({ event: objectId(event_id) });
 }
+
+export function update(id: string, meeting: any) {
+  return MeetingModel.findByIdAndUpdate(objectId(id), meeting, { new: true });
+}

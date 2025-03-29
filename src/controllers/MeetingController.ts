@@ -34,6 +34,15 @@ export async function createToken(req: any, res: Response) {
 export async function create(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
+
+    const existing = await MeetingService.getOneById(req.body.event, req.user._id);
+
+    if (existing) {
+      return res.status(500).json({
+        status: "error",
+        message: "Existing meeting.",
+      });
+    }
     
     const meeting = await MeetingService.create({
       event: req.body.event,
@@ -176,6 +185,67 @@ export async function isExpired(req: any, res: Response) {
       status: "success",
       message: "Meeting isn't expired.",
       is_expired: false
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function updateStartTime(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+    const updated_meeting = await MeetingService.update(meeting._id, req.body);
+    
+    if (!updated_meeting) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error updating meeting.",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Update meeting successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function updateEndTime(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+    const milisecond = new Date(req.body.end_time).getTime() - new Date(meeting.start_time).getTime();
+    const minute = Math.round(milisecond / 60000);
+    const updated_meeting = await MeetingService.update(meeting._id, {
+      ...req.body,
+      duration: minute
+    });
+    
+    if (!updated_meeting) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error updating meeting.",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "Update meeting successfully.",
     });
   } catch (err: any) {
     console.log("err", err);
