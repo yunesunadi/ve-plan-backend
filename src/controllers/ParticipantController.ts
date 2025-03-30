@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const ParticipantService = require("../services/ParticipantService");
+const MeetingService = require("../services/MeetingService");
 
 export async function create(req: any, res: Response) {
   try {
@@ -79,6 +80,67 @@ export async function getAll(req: any, res: Response) {
       status: "success",
       message: "Fetch participant successfully.",
       data: participants
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function getStayTimes(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+    const participants = await ParticipantService.getAll(req.params.id);
+    
+    const fraction = Math.floor(meeting.duration / 4);
+    const first = `${0} - ${fraction} min`;
+    const second = `${fraction} - ${fraction * 2} min`;
+    const third = `${fraction * 2} - ${fraction * 3} min`;
+    const fourth = `${fraction * 3} - ${fraction * 4} min`;
+
+    let data = [
+      {
+        label: first,
+        value: 0
+      },
+      {
+        label: second,
+        value: 0
+      },
+      {
+        label: third,
+        value: 0
+      },
+      {
+        label: fourth,
+        value: 0
+      },
+    ];
+
+    participants.forEach((participant: any) => {
+      data = data.map((item) => {
+        if (
+          participant.duration >= 0 && participant.duration <= fraction && item.label === first
+          || participant.duration > fraction && participant.duration <= fraction * 2 && item.label === second
+          || participant.duration > fraction * 2 && participant.duration <= fraction * 3 && item.label === third
+          || participant.duration > fraction * 3 && participant.duration <= fraction * 4 && item.label === fourth
+        ) {
+          return { ...item, value: item.value + 1 };
+        }
+        return item;
+      });
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch stay times successfully.",
+      data
     });
   } catch (err: any) {
     console.log("err", err);

@@ -173,7 +173,7 @@ export async function isExpired(req: any, res: Response) {
     const current_time = new Date().getTime();
     const expired_time =  jwtDecode(meeting.token).exp || current_time;
 
-    if ((current_time - expired_time) < (60 * 1000)) {
+    if ((expired_time - current_time) < (60 * 1000)) {
       return res.status(200).json({
         status: "success",
         message: "Meeting is expired.",
