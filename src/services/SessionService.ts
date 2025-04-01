@@ -18,3 +18,7 @@ export function getOneById(id: string) {
 export function update(id: string, session: any) {
   return SessionModel.findByIdAndUpdate(objectId(id), session, { new: true });
 }
+
+export function deleteOne(id: string) {
+  return SessionModel.findOneAndDelete(objectId(id));
+}

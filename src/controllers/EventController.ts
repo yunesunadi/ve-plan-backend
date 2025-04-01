@@ -102,8 +102,8 @@ export async function update(req: any, res: Response) {
 
     if (req.file) {
       updated_data = {
-        cover: req.file.filename,
-        ...req.body
+        ...req.body,
+        cover: req.file.filename
       };
     } else {
       updated_data = req.body;
@@ -131,4 +131,31 @@ export async function update(req: any, res: Response) {
       error: err
     });
   }
+}
+
+export async function deleteOne(req: Request, res: Response) {
+  try {
+    const event = await EventService.getOneById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID."
+      });
+    }
+
+    await EventService.deleteOne(req.params.id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Delete event successfully."
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
 }

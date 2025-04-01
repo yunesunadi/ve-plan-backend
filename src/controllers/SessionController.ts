@@ -116,3 +116,30 @@ export async function update(req: any, res: Response) {
     });
   }
 }
+
+export async function deleteOne(req: Request, res: Response) {
+  try {
+    const session = await SessionService.getOneById(req.params.id);
+
+    if (!session) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no session with this ID."
+      });
+    }
+
+    await SessionService.deleteOne(req.params.id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Delete session successfully."
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}

@@ -98,7 +98,7 @@ export async function getStayTimes(req: any, res: Response) {
     const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
     const participants = await ParticipantService.getAll(req.params.id);
     
-    const fraction = Math.floor(meeting.duration / 4);
+    const fraction = (meeting && meeting.duration && (Math.round(meeting.duration / 4) + 1)) || 0;
     const first = `${0} - ${fraction} min`;
     const second = `${fraction} - ${fraction * 2} min`;
     const third = `${fraction * 2} - ${fraction * 3} min`;

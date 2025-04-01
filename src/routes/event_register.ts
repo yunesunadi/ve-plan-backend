@@ -16,8 +16,10 @@ const approve_validation = [
 router.post("/", register_validation, jwtAuth, EventRegisterController.register);
 router.delete("/:id", jwtAuth, EventRegisterController.unregister);
 router.get("/events", jwtAuth, EventRegisterController.getAllByUserId);
-router.get("/:id", jwtAuth, EventRegisterController.hasRegistered);
+router.get("/:id/approved", jwtAuth, EventRegisterController.isRegisterApproved);
+router.get("/:id/users/approved", jwtAuth, EventRegisterController.getAllApprovedByEventId);
 router.get("/:id/users", jwtAuth, EventRegisterController.getAllByEventId);
+router.get("/:id", jwtAuth, EventRegisterController.hasRegistered);
 router.put("/approve", approve_validation, jwtAuth, EventRegisterController.approveRegister);
 router.put("/meeting_started", approve_validation, jwtAuth, EventRegisterController.startMeeting);
 

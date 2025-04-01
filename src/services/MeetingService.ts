@@ -26,7 +26,7 @@ export function createToken(name: string, email: string, is_moderator: boolean) 
     iss: "chat",
     room: "*",
     sub: process.env.JITSI_APP_ID,
-    exp: Math.round(new Date().setHours(new Date().getHours() + 10) / 1000),
+    exp: new Date(new Date().getTime() + 24 * 60 * 60 * 1000).getTime(),
     nbf: (Math.round((new Date).getTime() / 1000) - 10)
   }, 
   privateKey,

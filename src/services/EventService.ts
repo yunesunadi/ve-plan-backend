@@ -23,3 +23,7 @@ export function getOneById(id: string) {
 export function update(id: string, event: any) {
   return EventModel.findByIdAndUpdate(objectId(id), event, { new: true });
 }
+
+export function deleteOne(id: string) {
+  return EventModel.findOneAndDelete(objectId(id));
+}

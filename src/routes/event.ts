@@ -21,5 +21,6 @@ router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, Event
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
 router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, EventController.update);
+router.delete("/:id", jwtAuth, EventController.deleteOne);
 
 module.exports = router;

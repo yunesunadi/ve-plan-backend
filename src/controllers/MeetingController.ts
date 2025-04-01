@@ -106,7 +106,7 @@ export async function isStarted(req: any, res: Response) {
     const registered = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
     const invited = await EventInviteService.getHasInvited(req.params.id, req.user._id);
     
-    if (meeting && (registered || invited)) {
+    if (meeting && ((registered && registered.meeting_started) || (invited && invited.meeting_started))) {
       return res.status(200).json({
         status: "success",
         message: "Meeting for this event has already started.",
@@ -171,7 +171,7 @@ export async function isExpired(req: any, res: Response) {
   try {
     const meeting = await MeetingService.getOneByEventId(req.params.id);
     const current_time = new Date().getTime();
-    const expired_time =  jwtDecode(meeting.token).exp || current_time;
+    const expired_time = (meeting && jwtDecode(meeting.token).exp) || current_time;
 
     if ((expired_time - current_time) < (60 * 1000)) {
       return res.status(200).json({

@@ -3,6 +3,7 @@ import mongoose, { Schema } from "mongoose";
 const EventSchema = new Schema({
   cover: {
     type: String,
+    default: null
   },
   title: {
     type: String,
@@ -41,6 +42,24 @@ const EventSchema = new Schema({
 { 
   timestamps: true,
   versionKey: false
+});
+
+EventSchema.pre('findOneAndDelete', async function (next) {
+  try {
+    const event = await mongoose.model("Event").findOne(this.getQuery());
+
+    if (event) {
+      await mongoose.model("Session").deleteMany({ event: event._id });
+      await mongoose.model("EventRegister").deleteMany({ event: event._id });
+      await mongoose.model("EventInvite").deleteMany({ event: event._id });
+      await mongoose.model("Meeting").deleteMany({ event: event._id });
+      await mongoose.model("Participant").deleteMany({ event: event._id });
+    }
+
+    next();
+  } catch (err: any) {
+    next(err);
+  }
 });
 
 module.exports = mongoose.model("Event", EventSchema);

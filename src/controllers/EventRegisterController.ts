@@ -88,6 +88,39 @@ export async function hasRegistered(req: any, res: Response) {
      });
    }
 }
+export async function isRegisterApproved(req: any, res: Response) {
+  try {
+    const registered_event = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
+
+    if (!registered_event) {
+      return res.status(500).json({
+        status: "success",
+        message: "This event hasn't been registered.",
+      });
+    }
+
+    if (!registered_event.register_approved) {
+      return res.status(200).json({
+        status: "success",
+        message: "This event hasn't been register-approved.",
+        is_register_approved: false,
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      message: "This event has been register-approved.",
+      is_register_approved: true,
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
 
 export async function getAllByEventId(req: Request, res: Response) {
   try {
@@ -97,6 +130,25 @@ export async function getAllByEventId(req: Request, res: Response) {
       status: "success",
       message: "Fetch registered users successfully.",
       data: registered_users
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getAllApprovedByEventId(req: Request, res: Response) {
+  try {
+    const approved_users = await EventRegisterService.getAllApprovedByEventId(req.params.id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch register approved users successfully.",
+      data: approved_users
     });
   } catch (err: any) {
      console.log("err", err);

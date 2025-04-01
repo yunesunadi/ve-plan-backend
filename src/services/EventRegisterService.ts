@@ -21,6 +21,11 @@ export function getAllByEventId(id: string) {
   return EventRegisterModel.find({ event }).populate("user", "-password").populate("event");
 }
 
+export function getAllApprovedByEventId(id: string) {
+  const event = objectId(id);
+  return EventRegisterModel.find({ event, register_approved: true }).populate("user", "-password").populate("event");
+}
+
 export function getAllByUserId(user_id: string) {
   const user = objectId(user_id);
   return EventRegisterModel.find({ user, register_approved: true }).populate("user", "-password").populate("event");
