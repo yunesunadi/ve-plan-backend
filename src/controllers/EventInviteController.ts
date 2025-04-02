@@ -6,6 +6,15 @@ export async function invite(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
+    const existing = await EventInviteService.getOneByEventAndUserId(req.body.event_id, req.body.user_id);
+
+    if (existing) {
+      return res.status(500).json({
+        status: "error",
+        message: "Already invited this user.",
+      });
+    }
+
     const invite = await EventInviteService.invite({
       event: req.body.event_id,
       user: req.body.user_id

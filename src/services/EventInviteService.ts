@@ -6,6 +6,12 @@ export function invite(reqObj: any) {
   return EventInviteModel.create(reqObj);
 }
 
+export function getOneByEventAndUserId(event_id: string, user_id: string) {
+  const event = objectId(event_id);
+  const user = objectId(user_id);
+  return EventInviteModel.find({ event, user });
+}
+
 export function getAllByEventId(id: string) {
   const event = objectId(id);
   return EventInviteModel.find({ event }).populate("user", "-password").populate("event");
