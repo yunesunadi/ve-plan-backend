@@ -8,7 +8,7 @@ export async function invite(req: any, res: Response) {
 
     const existing = await EventInviteService.getOneByEventAndUserId(req.body.event_id, req.body.user_id);
 
-    if (existing) {
+    if (existing.length > 0) {
       return res.status(500).json({
         status: "error",
         message: "Already invited this user.",
