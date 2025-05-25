@@ -36,7 +36,7 @@ export async function getAllById(req: any, res: Response) {
     const user = await UserService.findById(req.user._id);
 
     if (!user) {
-      return res.status(500).json({
+      return res.status(404).json({
         status: "error",
         message: "Cannot find user with this ID."
       });
@@ -91,7 +91,7 @@ export async function update(req: any, res: Response) {
     const existed_user = await UserService.findByEmail(req.body.email);
 
     if (req.user.email !== req.body.email && existed_user) {
-      return res.status(500).json({
+      return res.status(409).json({
         status: "error",
         message: "User with this email is already existed.",
       });
@@ -137,7 +137,7 @@ export async function updatePassword(req: any, res: Response) {
     const hash = await bcrypt.hash(req.body.new_password, salt);
 
     if(!isCurrentPasswordCorrect) {
-      return res.status(500).json({
+      return res.status(400).json({
         status: "error",
         message: "Current password is not correct."
       });

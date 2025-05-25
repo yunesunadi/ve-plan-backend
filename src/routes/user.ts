@@ -4,6 +4,7 @@ import multer from "multer";
 const router = express.Router();
 const UserController = require("../controllers/UserController");
 const jwtAuth = require("../middlewares/jwtAuth");
+const organizerAuth = require("../middlewares/organizerAuth");
 
 const edit_profile_validation = [
   body("name", "Name is required.").notEmpty(),
@@ -24,6 +25,6 @@ router.get("/has_role", jwtAuth, UserController.hasRole);
 router.get("/", jwtAuth, UserController.getAllById);
 router.put("/", jwtAuth, profile_upload.single("profile"), edit_profile_validation, UserController.update);
 router.put("/password", jwtAuth, update_password_validation, UserController.updatePassword);
-router.get("/attendees", jwtAuth, UserController.getAttendeesByNameOrEmail);
+router.get("/attendees", jwtAuth, organizerAuth, UserController.getAttendeesByNameOrEmail);
 
 module.exports = router;

@@ -15,7 +15,7 @@ export async function register(req: Request, res: Response) {
     const existed_user = await UserService.findByEmail(req.body.email);
 
     if (existed_user) {
-      return res.status(500).json({
+      return res.status(409).json({
         status: "error",
         message: "User with this email is already existed.",
       });
@@ -108,7 +108,7 @@ export async function role(req: any, res: Response) {
     const user = await UserService.findById(req.user._id);
 
     if (user.role) {
-      return res.status(403).json({
+      return res.status(409).json({
         status: "error",
         message: "User role is already set."
       });
@@ -117,7 +117,7 @@ export async function role(req: any, res: Response) {
     const set_role = await UserService.setRole(req.user._id, req.body.role);
     
     if(!set_role) {
-      return res.status(500).json({
+      return res.status(409).json({
         status: "error",
         message: "Cannot set role to user with this ID."
       });

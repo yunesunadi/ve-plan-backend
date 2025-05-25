@@ -10,7 +10,7 @@ export async function create(req: any, res: Response) {
     const existing = await ParticipantService.getOne(req.body.event, req.user._id);
 
     if (existing) {
-      return res.status(500).json({
+      return res.status(409).json({
         status: "error",
         message: "Existing participant.",
       });

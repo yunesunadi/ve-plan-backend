@@ -3,6 +3,7 @@ import { body } from "express-validator";
 const router = express.Router();
 const SessionController = require("../controllers/SessionController");
 const jwtAuth = require("../middlewares/jwtAuth");
+const organizerAuth = require("../middlewares/organizerAuth");
 
 const create_validation = [
   body("title", "Title is required.").notEmpty(),
@@ -11,10 +12,10 @@ const create_validation = [
   body("event", "Event ID is required.").notEmpty(),
 ];
 
-router.post("/", create_validation, jwtAuth, SessionController.create);
+router.post("/", create_validation, jwtAuth, organizerAuth, SessionController.create);
 router.get("/", jwtAuth, SessionController.getAll);
 router.get("/:id", jwtAuth, SessionController.getOneById);
-router.put("/:id", create_validation, jwtAuth, SessionController.update);
-router.delete("/:id", jwtAuth, SessionController.deleteOne);
+router.put("/:id", create_validation, jwtAuth, organizerAuth, SessionController.update);
+router.delete("/:id", jwtAuth, organizerAuth, SessionController.deleteOne);
 
 module.exports = router;

@@ -41,10 +41,10 @@ export async function getAll(req: any, res: Response) {
   try {
     const sessions = await SessionService.getAll(req.headers["event-id"]);
 
-    if (!sessions) {
-      return res.status(404).json({
+    if (sessions.length < 1) {
+      return res.status(200).json({
         status: "error",
-        message: "There is no event found."
+        message: "There is no session found."
       });
     }
 

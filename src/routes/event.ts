@@ -4,6 +4,7 @@ import multer from "multer";
 const router = express.Router();
 const EventController = require("../controllers/EventController");
 const jwtAuth = require("../middlewares/jwtAuth");
+const organizerAuth = require("../middlewares/organizerAuth");
 
 const create_validation = [
   body("title", "Title is required.").notEmpty(),
@@ -17,10 +18,10 @@ const create_validation = [
 
 const cover_upload = multer({ dest: "dist/photos/covers/"});
 
-router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, EventController.create);
+router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.create);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
-router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, EventController.update);
-router.delete("/:id", jwtAuth, EventController.deleteOne);
+router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.update);
+router.delete("/:id", jwtAuth, organizerAuth, EventController.deleteOne);
 
 module.exports = router;
