@@ -19,7 +19,7 @@ router.post("/", register_validation, jwtAuth, attendeeAuth, EventRegisterContro
 router.delete("/:id", jwtAuth, attendeeAuth, EventRegisterController.unregister);
 router.get("/events", jwtAuth, attendeeAuth, EventRegisterController.getAllByUserId);
 router.get("/:id/approved", jwtAuth, attendeeAuth, EventRegisterController.isRegisterApproved);
-router.get("/:id/users/approved", organizerAuth, jwtAuth, EventRegisterController.getAllApprovedByEventId);
+router.get("/:id/users/approved", jwtAuth, organizerAuth, EventRegisterController.getAllApprovedByEventId);
 router.get("/:id/users", jwtAuth, organizerAuth, EventRegisterController.getAllByEventId);
 router.get("/:id", jwtAuth, attendeeAuth, EventRegisterController.hasRegistered);
 router.put("/approve", approve_validation, jwtAuth, organizerAuth, EventRegisterController.approveRegister);

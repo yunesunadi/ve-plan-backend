@@ -44,14 +44,7 @@ export async function create(req: any, res: Response) {
 
 export async function getAll(req: any, res: Response) {
   try {
-    const events = await EventService.getAll(req.user._id);
-
-    if (events.length < 1) {
-      return res.status(200).json({
-        status: "error",
-        message: "There is no event found."
-      });
-    }
+    const events = await EventService.getAll(req.query);
 
     return res.status(200).json({
       status: "success",
