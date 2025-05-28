@@ -42,9 +42,29 @@ export async function create(req: any, res: Response) {
   }
 }
 
+
 export async function getAll(req: any, res: Response) {
   try {
-    const events = await EventService.getAll(req.query);
+    const events = await EventService.getAll();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch events successfully.",
+      data: events
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
+export async function getAllByQuery(req: any, res: Response) {
+  try {
+    const events = await EventService.getAllByQuery(req.query);
 
     return res.status(200).json({
       status: "success",

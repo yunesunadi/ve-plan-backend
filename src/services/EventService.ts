@@ -6,6 +6,10 @@ export function create(reqObj: any) {
   return EventModel.create(reqObj);
 }
 
+export function getAll() {
+  return EventModel.find({ type: "public" });
+}
+
 const getQuery = (...query: any) => {
   const source_query = {
     type: "public"
@@ -19,8 +23,8 @@ const getQuery = (...query: any) => {
   };
 }
 
-export function getAll(query: any) {
-  let result, time_query = {}, category_query = {}, search_query = {};
+export function getAllByQuery(query: any) {
+  let result, time_query = {}, category_query = {}, search_query = {}, date_query = {};
   const currentDate = new Date();
 
   if (query) {
@@ -46,9 +50,25 @@ export function getAll(query: any) {
       category_query = { category: query.category };
     }
 
-    result = EventModel.find(getQuery(search_query, time_query, category_query));
+    if (query.date) {
+      date_query = { date: query.date };
+    }
+
+    if (query.limit) {
+      result = EventModel.find(getQuery(search_query, time_query, category_query, date_query)).limit(query.limit);
+    }
+
+    if (query.offset) {
+      result = EventModel.find(getQuery(search_query, time_query, category_query, date_query)).skip(query.offset).limit(query.limit);
+    }
   } else {
-    result = EventModel.find({ type: "public" });
+    if (query.limit) {
+      result = EventModel.find({ type: "public" }).limit(query.limit);
+    }
+
+    if (query.offset) {
+      result = EventModel.find({ type: "public" }).skip(query.offset).limit(query.limit);
+    }
   }
   
   return result;
