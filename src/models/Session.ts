@@ -12,11 +12,11 @@ const SessionSchema = new Schema({
     type: String,
   },
   start_time: {
-    type: String,
+    type: Date,
     require: true,
   },
   end_time: {
-    type: String,
+    type: Date,
     require: true,
   },
   event: {

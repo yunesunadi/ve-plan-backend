@@ -7,6 +7,16 @@ export async function create(req: any, res: Response) {
     if(isRequestInvalid(req, res)) return;
 
     const filename = req.file?.filename;
+    const created_date = new Date(req.body.date).getTime();
+    const current_date = new Date().getTime();
+    const one_day = 24 * 60 * 60 * 1000;
+    
+    if (created_date < (current_date - one_day)) {
+      return res.status(409).json({
+        status: "error",
+        message: "Can't create an event in past days."
+      });
+    }
     
     let event = await EventService.create({
       cover: filename,

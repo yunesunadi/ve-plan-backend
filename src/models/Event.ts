@@ -18,11 +18,11 @@ const EventSchema = new Schema({
     required: true,
   },
   start_time: {
-    type: String,
+    type: Date,
     require: true,
   },
   end_time: {
-    type: String,
+    type: Date,
     require: true,
   },
   category: {
