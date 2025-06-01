@@ -6,7 +6,10 @@ export function create(reqObj: any) {
   return EventModel.create(reqObj);
 }
 
-export function getAll() {
+export function getAll(role: string) {
+  if (role === "organizer") {
+    return EventModel.find();
+  }
   return EventModel.find({ type: "public" });
 }
 
@@ -71,6 +74,46 @@ export function getAllByQuery(query: any) {
     }
   }
   
+  return result;
+}
+
+export function getMyEvents(query: any, user_id: string) {
+  let result, type_query = {};
+
+  if (query) {
+    if (query.type) {
+      switch (query.type) {
+        case "all":
+          type_query = { };
+        break;
+        case "public":
+          type_query = { type: "public" };
+        break;
+        case "private":
+          type_query = { type: "private" };
+        break;
+      }
+    }
+
+    const qry = { ...type_query, user: objectId(user_id) };
+
+    if (query.limit) {
+      result = EventModel.find(qry).limit(query.limit);
+    }
+
+    if (query.offset) {
+      result = EventModel.find(qry).skip(query.offset).limit(query.limit);
+    }
+  } else {
+    if (query.limit) {
+      result = EventModel.find({ user: objectId(user_id) }).limit(query.limit);
+    }
+
+    if (query.offset) {
+      result = EventModel.find({ user: objectId(user_id) }).skip(query.offset).limit(query.limit);
+    }
+  }
+
   return result;
 }
 

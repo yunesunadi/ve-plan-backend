@@ -20,6 +20,7 @@ const cover_upload = multer({ dest: "dist/photos/covers/"});
 
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.create);
 router.get("/events_by_query", jwtAuth, EventController.getAllByQuery);
+router.get("/own", jwtAuth, organizerAuth, EventController.getMyEvents);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
 router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.update);
