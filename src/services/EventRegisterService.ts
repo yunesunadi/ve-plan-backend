@@ -16,9 +16,23 @@ export function getHasRegistered(event_id: string, user_id: string) {
   return EventRegisterModel.findOne({ event, user });
 }
 
-export function getAllByEventId(id: string) {
+export function getAllByEventId(id: string, query?: any) {
   const event = objectId(id);
-  return EventRegisterModel.find({ event }).populate("user", "-password").populate("event");
+  let result;
+  
+  if (Object.entries(query).length > 0) {
+    if (query.limit) {
+      result = EventRegisterModel.find({ event }).populate("user", "-password").populate("event").limit(query.limit);
+    }
+  
+    if (query.offset) {
+      result = EventRegisterModel.find({ event }).populate("user", "-password").populate("event").skip(query.offset).limit(query.limit);
+    }
+  } else {
+    result = EventRegisterModel.find({ event }).populate("user", "-password").populate("event");
+  }
+
+  return result;
 }
 
 export function getAllApprovedByEventId(id: string) {

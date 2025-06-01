@@ -30,7 +30,7 @@ export function getAllByQuery(query: any) {
   let result, time_query = {}, category_query = {}, search_query = {}, date_query = {};
   const currentDate = new Date();
 
-  if (query) {
+  if (Object.entries(query).length > 0) {
     if (query.search_value) {
       search_query = { title: { $regex: query.search_value, $options: 'i' } };
     }
@@ -80,7 +80,7 @@ export function getAllByQuery(query: any) {
 export function getMyEvents(query: any, user_id: string) {
   let result, type_query = {};
 
-  if (query) {
+  if (Object.entries(query).length > 0) {
     if (query.type) {
       switch (query.type) {
         case "all":

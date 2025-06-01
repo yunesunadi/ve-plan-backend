@@ -124,7 +124,7 @@ export async function isRegisterApproved(req: any, res: Response) {
 
 export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const registered_users = await EventRegisterService.getAllByEventId(req.params.id);
+    const registered_users = await EventRegisterService.getAllByEventId(req.params.id, req.query);
 
     return res.status(200).json({
       status: "success",
