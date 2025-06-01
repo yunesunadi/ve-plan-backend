@@ -17,6 +17,7 @@ const approve_validation = [
 
 router.post("/", register_validation, jwtAuth, attendeeAuth, EventRegisterController.register);
 router.delete("/:id", jwtAuth, attendeeAuth, EventRegisterController.unregister);
+router.get("/events/approved", jwtAuth, attendeeAuth, EventRegisterController.getAllApprovedByUserId);
 router.get("/events", jwtAuth, attendeeAuth, EventRegisterController.getAllByUserId);
 router.get("/:id/approved", jwtAuth, attendeeAuth, EventRegisterController.isRegisterApproved);
 router.get("/:id/users/approved", jwtAuth, organizerAuth, EventRegisterController.getAllApprovedByEventId);

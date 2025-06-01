@@ -179,6 +179,25 @@ export async function getAllByUserId(req: any, res: Response) {
    }
 }
 
+export async function getAllApprovedByUserId(req: any, res: Response) {
+  try {
+    const registered_events = await EventRegisterService.getAllApprovedByUserId(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch registered events successfully.",
+      data: registered_events
+    });
+  } catch (err: any) {
+     console.log("err", err);
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong.",
+       error: err
+     });
+   }
+}
+
 export async function approveRegister(req: any, res: Response) {
   try {
     const register_approved = await EventRegisterService.approveRegister(req.body.user_id, req.body.event_id);
