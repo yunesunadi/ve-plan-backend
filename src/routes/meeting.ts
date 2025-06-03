@@ -21,7 +21,7 @@ const update_end_validation = [
 ];
 
 router.post("/", create_validation, jwtAuth, organizerAuth, MeetingController.create);
-router.post("/token", jwtAuth, organizerAuth, MeetingController.createToken);
+router.post("/token", jwtAuth, MeetingController.createToken);
 router.get("/:id/is_created", jwtAuth, organizerAuth, MeetingController.isCreated);
 router.get("/:id/is_started", jwtAuth, attendeeAuth, MeetingController.isStarted);
 router.get("/:id/is_expired", jwtAuth, MeetingController.isExpired);

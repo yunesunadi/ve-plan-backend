@@ -20,3 +20,8 @@ export function getAll(event_id: string) {
   const event = objectId(event_id);
   return ParticipantModel.find({ event }).populate("user", "-password");
 }
+
+export function getAllWithNoEndTime(event_id: string) {
+  const event = objectId(event_id);
+  return ParticipantModel.find({ event, end_time: null }).populate("user", "-password");
+}

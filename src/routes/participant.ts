@@ -17,7 +17,8 @@ const update_validation = [
 ];
 
 router.post("/", create_validation, jwtAuth, attendeeAuth, ParticipantController.create);
-router.put("/:id", update_validation, jwtAuth, attendeeAuth, ParticipantController.update);
+router.put("/:id/no_end_time", jwtAuth, organizerAuth, ParticipantController.updateNoEndTime);
+router.put("/:id", update_validation, jwtAuth, ParticipantController.update);
 router.get("/:id", jwtAuth, organizerAuth, ParticipantController.getAll);
 router.get("/:id/stay_times", jwtAuth, organizerAuth, ParticipantController.getStayTimes);
 

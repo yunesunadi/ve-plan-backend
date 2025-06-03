@@ -72,6 +72,42 @@ export async function update(req: any, res: Response) {
   }
 }
 
+export async function updateNoEndTime(req: any, res: Response) {
+  try {
+    if(isRequestInvalid(req, res)) return;
+
+    const participants = await ParticipantService.getAllWithNoEndTime(req.params.id);
+
+    if (participants.length < 1) {
+      return res.status(200).json({
+        status: "error",
+        message: "No participant found.",
+      });
+    }
+
+    participants.forEach(async (participant: any) => {
+      const milisecond = new Date().getTime() - new Date(participant.start_time).getTime();
+      const minute = Math.round(milisecond / 60000);
+      await ParticipantService.update(participant._id, {
+        end_time: new Date().toISOString(),
+        duration: minute
+      });
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Update participants successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
 export async function getAll(req: any, res: Response) {
   try {
     const participants = await ParticipantService.getAll(req.params.id);
