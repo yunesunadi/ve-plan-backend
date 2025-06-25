@@ -2,7 +2,9 @@ import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 const UserService = require("../services/UserService");
+const EmailService = require("../services/EmailService");
 
 export async function register(req: Request, res: Response) {
   try {
@@ -21,23 +23,31 @@ export async function register(req: Request, res: Response) {
       });
     }
     
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     let user = await UserService.create({
       profile: filename,
       name: req.body.name,
       email: req.body.email,
-      password: hash
+      password: hash,
+      isVerified: false,
+      verificationToken,
+      verificationTokenExpires
     });
 
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.__v;
-    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+    await EmailService.send({
+      action: "email_verified",
+      recipient: user.email,
+      additional: {
+        name: user.name,
+        link: `${process.env.FRONTEND_URL}/verify_email?token=${verificationToken}`
+      }
+    });
 
     return res.status(201).json({
       status: "success",
-      message: "Register successfully.",
-      token
+      message: "Register successfully. Please check your email to verify your account."
     });
   } catch (err: any) {
     console.log("err", err);
@@ -77,6 +87,8 @@ export async function login(req: Request, res: Response) {
     user._id = user._id.toString();
     user = user.toJSON();
     delete user.password;
+    delete user.verificationToken;
+    delete user.__v;
     const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
     
     return res.status(200).json({
@@ -94,11 +106,49 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-export async function verify(req: any, res: any) {
-  return res.status(200).json({
-    status: "success",
-    message: "Verified successfully."
-  });
+export async function verify(req: any, res: Response) {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Verification token is required."
+      });
+    }
+
+    let user = await UserService.findByVerificationToken(token);
+
+    if (!user) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid or expired verification token. Please register again or request a new verification email."
+      });
+    }
+
+    user._id = user._id.toString();
+    user = user.toJSON();
+    delete user.password;
+    delete user.verificationToken;
+    delete user.__v;
+
+    const jwt_token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+
+    await UserService.verifyUser(user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Email verified successfully. You can now log in.",
+      token: jwt_token
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
 }
 
 export async function role(req: any, res: Response) {

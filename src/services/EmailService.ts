@@ -10,7 +10,16 @@ export async function send(obj: { action: string; recipient: string; additional:
   };
   let msg: any;
 
-  if (obj.action === "register_approved") {
+  if (obj.action === "email_verified") {
+    msg = {
+      ...basic_info,
+      templateId: `${process.env.EMAIL_VERIFIED_TEMPLATE}`,
+      dynamicTemplateData: {
+        name: obj.additional.name,
+        link: obj.additional.link,
+      },
+    };
+  } else if (obj.action === "register_approved") {
     msg = {
       ...basic_info,
       templateId: `${process.env.REGISTER_APPROVAL_TEMPLATE}`,

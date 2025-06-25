@@ -48,3 +48,18 @@ export function update(id: string, data: any) {
 export function updatePassword(id: string, password: string) {
   return UserModel.findOneAndUpdate({ _id: objectId(id) }, { password });
 }
+
+export function findByVerificationToken(token: string) {
+  return UserModel.findOne({
+    verificationToken: token,
+    verificationTokenExpires: { $gt: new Date() }
+  });
+}
+
+export function verifyUser(id: string) {
+  return UserModel.findByIdAndUpdate(
+    objectId(id),
+    { isVerified: true, verificationToken: null },
+    { new: true }
+  );
+}

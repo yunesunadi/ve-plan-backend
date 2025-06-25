@@ -28,6 +28,6 @@ const profile_upload = multer({ dest: "dist/photos/profiles/"});
 router.post("/register", profile_upload.single("profile"), register_validation, AuthController.register);
 router.post("/login", login_validation, AuthController.login);
 router.post("/role", role_validation, jwtAuth, AuthController.role)
-router.get("/verify", jwtAuth, AuthController.verify);
+router.post("/verify_email", AuthController.verify);
 
 module.exports = router;
