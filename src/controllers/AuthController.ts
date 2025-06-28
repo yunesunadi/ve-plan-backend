@@ -120,7 +120,7 @@ export async function verify(req: any, res: Response) {
     let user = await UserService.findByVerificationToken(token);
 
     if (!user) {
-      return res.status(400).json({
+      return res.status(409).json({
         status: "error",
         message: "Invalid or expired verification token. Please register again or request a new verification email."
       });
@@ -176,6 +176,100 @@ export async function role(req: any, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Set role successfully."
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function forgotPassword(req: Request, res: Response) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email is required."
+      });
+    }
+
+    const user = await UserService.findByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "No user found with this email."
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await UserService.setResetPasswordToken(user._id, resetToken, resetTokenExpires);
+
+    await EmailService.send({
+      action: "reset_password",
+      recipient: user.email,
+      additional: {
+        name: user.name,
+        link: `${process.env.FRONTEND_URL}/reset_password?token=${resetToken}`
+      }
+    });
+    return res.status(200).json({
+      status: "success",
+      message: "Sent password reset email successfully."
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const { token } = req.query;
+    const { password } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        status: "error",
+        message: "Token is required."
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        status: "error",
+        message: "Password is required."
+      });
+    }
+
+    const user = await UserService.findByResetPasswordToken(token);
+
+    if (!user) {
+      return res.status(409).json({
+        status: "error",
+        message: "Invalid or expired password reset token."
+      });
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(password, salt);
+
+    await UserService.updatePasswordAndClearReset(user._id, hash);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Password has been reset successfully."
     });
   } catch (err: any) {
     console.log("err", err);

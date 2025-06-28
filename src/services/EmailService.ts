@@ -19,6 +19,15 @@ export async function send(obj: { action: string; recipient: string; additional:
         link: obj.additional.link,
       },
     };
+  } else if (obj.action === "reset_password") {
+    msg = {
+      ...basic_info,
+      templateId: `${process.env.RESET_PASSWORD_TEMPLATE}`,
+      dynamicTemplateData: {
+        name: obj.additional.name,
+        link: obj.additional.link,
+      },
+    };
   } else if (obj.action === "register_approved") {
     msg = {
       ...basic_info,

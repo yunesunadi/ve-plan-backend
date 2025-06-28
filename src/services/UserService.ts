@@ -63,3 +63,30 @@ export function verifyUser(id: string) {
     { new: true }
   );
 }
+
+export function setResetPasswordToken(id: string, token: string, expires: Date) {
+  return UserModel.findByIdAndUpdate(
+    objectId(id),
+    { resetPasswordToken: token, resetPasswordExpires: expires },
+    { new: true }
+  );
+}
+
+export function findByResetPasswordToken(token: string) {
+  return UserModel.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: new Date() }
+  });
+}
+
+export function updatePasswordAndClearReset(id: string, password: string) {
+  return UserModel.findByIdAndUpdate(
+    objectId(id),
+    {
+      password,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    },
+    { new: true }
+  );
+}
