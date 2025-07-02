@@ -15,7 +15,7 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
   },
   role: {
     type: String,
@@ -36,6 +36,11 @@ const UserSchema = new Schema({
   },
   resetPasswordExpires: {
     type: Date,
+  },
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
   },
 },
 { 

@@ -1,6 +1,7 @@
 import express from "express";
 import { body } from "express-validator";
 import multer from "multer";
+import passport from "passport";
 const router = express.Router();
 const AuthController = require("../controllers/AuthController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -41,5 +42,7 @@ router.post("/role", role_validation, jwtAuth, AuthController.role)
 router.post("/verify_email", AuthController.verify);
 router.post("/forgot_password", forgot_password_validation, AuthController.forgotPassword);
 router.post("/reset_password", reset_password_validation, AuthController.resetPassword);
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google/callback", passport.authenticate("google", { session: false, failureRedirect: "/login" }), AuthController.googleCallback);
 
 module.exports = router;

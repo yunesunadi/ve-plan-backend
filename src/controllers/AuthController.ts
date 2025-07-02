@@ -88,7 +88,6 @@ export async function login(req: Request, res: Response) {
     user = user.toJSON();
     delete user.password;
     delete user.verificationToken;
-    delete user.__v;
     const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
     
     return res.status(200).json({
@@ -130,7 +129,6 @@ export async function verify(req: any, res: Response) {
     user = user.toJSON();
     delete user.password;
     delete user.verificationToken;
-    delete user.__v;
 
     const jwt_token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
 
@@ -155,7 +153,7 @@ export async function role(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const user = await UserService.findById(req.user._id);
+    let user = await UserService.findById(req.user._id);
 
     if (user.role) {
       return res.status(409).json({
@@ -173,9 +171,18 @@ export async function role(req: any, res: Response) {
       });
     }
 
+    user = await UserService.findById(req.user._id);
+    user._id = user._id.toString();
+    user = user.toJSON();
+    delete user.password;
+    delete user.verificationToken;
+
+    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+
     return res.status(200).json({
       status: "success",
-      message: "Set role successfully."
+      message: "Set role successfully.",
+      token
     });
   } catch (err: any) {
     console.log("err", err);
@@ -273,6 +280,25 @@ export async function resetPassword(req: Request, res: Response) {
     });
   } catch (err: any) {
     console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function googleCallback(req: any, res: Response) {
+  try {
+    if (!req.user.token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Google authentication failed."
+      });
+    }
+
+    return res.redirect(`${process.env.FRONTEND_URL}/social_login_redirect?token=${req.user.token}`);
+  } catch (err) {
     return res.status(500).json({
       status: "error",
       message: "Something went wrong.",
