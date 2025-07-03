@@ -306,3 +306,22 @@ export async function googleCallback(req: any, res: Response) {
     });
   }
 }
+
+export async function facebookCallback(req: any, res: Response) {
+  try {
+    if (!req.user.token) {
+      return res.status(401).json({
+        status: "error",
+        message: "Facebook authentication failed."
+      });
+    }
+
+    return res.redirect(`${process.env.FRONTEND_URL}/social_login_redirect?token=${req.user.token}`);
+  } catch (err) {
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}

@@ -44,5 +44,7 @@ router.post("/forgot_password", forgot_password_validation, AuthController.forgo
 router.post("/reset_password", reset_password_validation, AuthController.resetPassword);
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 router.get("/google/callback", passport.authenticate("google", { session: false, failureRedirect: "/login" }), AuthController.googleCallback);
+router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile", "email"] }));
+router.get("/facebook/callback", passport.authenticate("facebook", { session: false, failureRedirect: "/login" }), AuthController.facebookCallback);
 
 module.exports = router;
