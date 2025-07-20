@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
+import { createServer } from "http";
 const app = express();
+const server = createServer(app);
 import cors from "cors";
 import bodyParser from "body-parser";
 import path from "path";
@@ -12,10 +14,14 @@ const emailRouter = require("./routes/email");
 const eventInviteRouter = require("./routes/event_invite");
 const meetingRouter = require("./routes/meeting");
 const participantRouter = require("./routes/participant");
+const notificationRouter = require("./routes/notification");
 
 require("dotenv").config();
 require("./libs/connectdb");
 require("./libs/passport");
+
+const socket = require("./libs/socket");
+socket.initializeSocket(server);
 
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || "*",
@@ -39,11 +45,12 @@ app.use(PREFIX + "/emails", emailRouter);
 app.use(PREFIX + "/event_invites", eventInviteRouter);
 app.use(PREFIX + "/meetings", meetingRouter);
 app.use(PREFIX + "/participants", participantRouter);
+app.use(PREFIX + "/notifications", notificationRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is listening at port ${PORT}...`);
 });

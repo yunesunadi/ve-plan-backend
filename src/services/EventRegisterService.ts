@@ -50,14 +50,14 @@ export function getAllApprovedByUserId(user_id: string) {
   return EventRegisterModel.find({ user, register_approved: true }).populate("user", "-password").populate("event");
 }
 
-export function approveRegister(user_id: string, event_id: string) {
-  const user = objectId(user_id);
+export function approveRegister(user_id_list: string[], event_id: string) {
   const event = objectId(event_id);
-  return EventRegisterModel.findOneAndUpdate({ user, event }, { register_approved: true }, { new: true });
+  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
+  return EventRegisterModel.updateMany({ user: { $in: user_id_list_object }, event }, { register_approved: true }, { new: true });
 }
 
-export function startMeeting(user_id: string, event_id: string) {
-  const user = objectId(user_id);
+export function startMeeting(user_id_list: string[], event_id: string) {
   const event = objectId(event_id);
-  return EventRegisterModel.findOneAndUpdate({ user, event }, { meeting_started: true }, { new: true });
+  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
+  return EventRegisterModel.updateMany({ user: { $in: user_id_list_object }, event }, { meeting_started: true }, { new: true });
 }

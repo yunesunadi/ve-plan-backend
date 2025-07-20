@@ -1,31 +1,55 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const EventInviteService = require("../services/EventInviteService");
+const EmailService = require("../services/EmailService");
+const NotificationService = require("../services/NotificationService");
+const UserService = require("../services/UserService");
+const EventService = require("../services/EventService");
 
 export async function invite(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const existing = await EventInviteService.getOneByEventAndUserId(req.body.event_id, req.body.user_id);
+    const user_id_list = req.body.user_id_list;
+    const event_id = req.body.event_id;
+    const event = await EventService.getOneById(event_id);
 
-    if (existing.length > 0) {
+    const existing = await EventInviteService.getOneByEventAndUserId(event_id, user_id_list);
+
+    const already_invited_users = await Promise.all(existing.map(async (item: any) => {
+      return await UserService.findById(item.user);
+    }));
+
+    if (already_invited_users.length > 0) {
       return res.status(409).json({
         status: "error",
-        message: "Already invited this user.",
+        message: `Already invited users: ${already_invited_users.map((item: any) => item.name).join(", ")}`,
       });
     }
 
-    const invite = await EventInviteService.invite({
-      event: req.body.event_id,
-      user: req.body.user_id
-    });
+    await Promise.all(user_id_list.map(async (user_id: string) => {
+      const user = await UserService.findById(user_id);
+
+      await EmailService.send({
+        action: "invitation_sent",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          event_title: event.title,
+        }
+      });
+    }));
+
+    const invite = await EventInviteService.invite(user_id_list, event_id);
 
     if (!invite) {
       return res.status(500).json({
         status: "error",
         message: "Error inviting event.",
       });
-    } 
+    }
+
+    await NotificationService.sendInvitation(user_id_list, event.title);
 
     return res.status(201).json({
       status: "success",
@@ -144,7 +168,24 @@ export async function acceptInvite(req: any, res: Response) {
 
 export async function startMeeting(req: any, res: Response) {
   try {
-    const meeting_started = await EventInviteService.startMeeting(req.body.user_id, req.body.event_id);
+    const user_id_list = req.body.user_id_list;
+    const event_id = req.body.event_id;
+    const event = await EventService.getOneById(event_id);
+    
+    await Promise.all(user_id_list.map(async (user_id: string) => {
+      const user = await UserService.findById(user_id);
+
+      await EmailService.send({
+        action: "meeting_started",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          event_title: event.title,
+        }
+      });
+    }));
+
+    const meeting_started = await EventInviteService.startMeeting(user_id_list, event_id);
 
     if (!meeting_started) {
       return res.status(500).json({
@@ -152,6 +193,8 @@ export async function startMeeting(req: any, res: Response) {
         message: "Failed to send meeting email.",
       });
     }
+
+    await NotificationService.sendMeetingStarted(user_id_list, event.title);
 
     return res.status(200).json({
       status: "success",

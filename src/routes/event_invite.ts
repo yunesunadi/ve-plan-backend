@@ -7,7 +7,8 @@ const organizerAuth = require("../middlewares/organizerAuth");
 const attendeeAuth = require("../middlewares/attendeeAuth");
 
 const invite_validation = [
-  body("user_id", "User ID is required.").notEmpty(),
+  body("user_id_list", "User ID list is required.").notEmpty(),
+  body("user_id_list").isArray(),
   body("event_id", "Event ID is required.").notEmpty(),
 ];
 

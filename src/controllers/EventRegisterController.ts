@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const EventRegisterService = require("../services/EventRegisterService");
+const EmailService = require("../services/EmailService");
+const NotificationService = require("../services/NotificationService");
+const EventService = require("../services/EventService");
+const UserService = require("../services/UserService");
 
 export async function register(req: any, res: Response) {
   try {
@@ -200,7 +204,23 @@ export async function getAllApprovedByUserId(req: any, res: Response) {
 
 export async function approveRegister(req: any, res: Response) {
   try {
-    const register_approved = await EventRegisterService.approveRegister(req.body.user_id, req.body.event_id);
+    const user_id_list = req.body.user_id_list;
+    const event = await EventService.getOneById(req.body.event_id);
+    
+    await Promise.all(user_id_list.map(async (user_id: string) => {
+      const user = await UserService.findById(user_id);
+
+      await EmailService.send({
+        action: "register_approved",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          event_title: event.title,
+        }
+      });
+    }));
+
+    const register_approved = await EventRegisterService.approveRegister(user_id_list, req.body.event_id);
 
     if (!register_approved) {
       return res.status(500).json({
@@ -208,7 +228,9 @@ export async function approveRegister(req: any, res: Response) {
         message: "Failed to approve registration.",
       });
     }
-
+    
+    await NotificationService.sendRegistrationApproved(user_id_list, event.title);
+    
     return res.status(200).json({
       status: "success",
       message: "Registration has been successfully approved.",
@@ -225,7 +247,24 @@ export async function approveRegister(req: any, res: Response) {
 
 export async function startMeeting(req: any, res: Response) {
   try {
-    const meeting_started = await EventRegisterService.startMeeting(req.body.user_id, req.body.event_id);
+    const user_id_list = req.body.user_id_list;
+    const event_id = req.body.event_id;
+    const event = await EventService.getOneById(event_id);
+    
+    await Promise.all(user_id_list.map(async (user_id: string) => {
+      const user = await UserService.findById(user_id);
+
+      await EmailService.send({
+        action: "meeting_started",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          event_title: event.title,
+        }
+      });
+    }));
+
+    const meeting_started = await EventRegisterService.startMeeting(user_id_list, event_id);
 
     if (!meeting_started) {
       return res.status(500).json({
@@ -233,6 +272,8 @@ export async function startMeeting(req: any, res: Response) {
         message: "Failed to send meeting email.",
       });
     }
+
+    await NotificationService.sendMeetingStarted(user_id_list, event.title);
 
     return res.status(200).json({
       status: "success",

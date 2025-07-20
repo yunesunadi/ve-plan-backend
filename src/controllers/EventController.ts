@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 const EventService = require("../services/EventService");
+const NotificationService = require("../services/NotificationService");
 
 export async function create(req: any, res: Response) {
   try {
@@ -36,6 +37,10 @@ export async function create(req: any, res: Response) {
         message: "Error creating event.",
       });
     } 
+
+    if (event.type === "public") {
+      await NotificationService.sendEventCreated(event);
+    }
 
     return res.status(201).json({
       status: "success",
@@ -159,6 +164,10 @@ export async function update(req: any, res: Response) {
         message: "Error updating event.",
       });
     } 
+
+    if (event.type === "public") {
+      await NotificationService.sendEventUpdated(event);
+    }
 
     return res.status(200).json({
       status: "success",

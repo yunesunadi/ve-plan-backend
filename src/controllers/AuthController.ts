@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 const UserService = require("../services/UserService");
 const EmailService = require("../services/EmailService");
+const NotificationService = require("../services/NotificationService");
 
 export async function register(req: Request, res: Response) {
   try {
@@ -81,6 +82,13 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({
         status: "error",
         message: "Incorrect password."
+      });
+    }
+
+    if(!user.isVerified) {
+      return res.status(401).json({
+        status: "error",
+        message: "Please verify your email to login."
       });
     }
 
@@ -178,6 +186,8 @@ export async function role(req: any, res: Response) {
     delete user.verificationToken;
 
     const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+
+    await NotificationService.sendRegistrationWelcome(user);
 
     return res.status(200).json({
       status: "success",

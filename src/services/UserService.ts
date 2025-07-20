@@ -90,3 +90,7 @@ export function updatePasswordAndClearReset(id: string, password: string) {
     { new: true }
   );
 }
+
+export function findAllVerified() {
+  return UserModel.find({ isVerified: true });
+}

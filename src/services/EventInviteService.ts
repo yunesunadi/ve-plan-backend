@@ -2,14 +2,17 @@ import { objectId } from "../helpers/utils";
 
 const EventInviteModel = require("../models/EventInvite");
 
-export function invite(reqObj: any) {
-  return EventInviteModel.create(reqObj);
+export function invite(user_id_list: string[], event_id: string) {
+  const event = objectId(event_id);
+  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
+  const list = user_id_list_object.map(user => ({ user, event }));
+  return EventInviteModel.insertMany(list);
 }
 
-export function getOneByEventAndUserId(event_id: string, user_id: string) {
+export function getOneByEventAndUserId(event_id: string, user_id_list: string[]) {
   const event = objectId(event_id);
-  const user = objectId(user_id);
-  return EventInviteModel.find({ event, user });
+  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
+  return EventInviteModel.find({ event, user: { $in: user_id_list_object } });
 }
 
 export function getAllByEventId(id: string) {
@@ -38,10 +41,10 @@ export function acceptInvite(user_id: string, event_id: string) {
   return EventInviteModel.findOneAndUpdate({ user, event }, { invitation_accepted: true }, { new: true });
 }
 
-export function startMeeting(user_id: string, event_id: string) {
-  const user = objectId(user_id);
+export function startMeeting(user_id_list: string[], event_id: string) {
   const event = objectId(event_id);
-  return EventInviteModel.findOneAndUpdate({ user, event }, { meeting_started: true }, { new: true });
+  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
+  return EventInviteModel.updateMany({ user: { $in: user_id_list_object }, event }, { meeting_started: true }, { new: true });
 }
 
 export function getHasInvited(event_id: string, user_id: string) {
