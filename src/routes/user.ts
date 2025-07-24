@@ -27,4 +27,4 @@ router.put("/", jwtAuth, profile_upload.single("profile"), edit_profile_validati
 router.put("/password", jwtAuth, update_password_validation, UserController.updatePassword);
 router.get("/attendees", jwtAuth, organizerAuth, UserController.getAttendeesByNameOrEmail);
 
-module.exports = router;
+export default router;

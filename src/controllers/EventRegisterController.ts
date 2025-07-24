@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-const EventRegisterService = require("../services/EventRegisterService");
-const EmailService = require("../services/EmailService");
-const NotificationService = require("../services/NotificationService");
-const EventService = require("../services/EventService");
-const UserService = require("../services/UserService");
+import * as EventRegisterService from "../services/EventRegisterService";
+import * as EmailService from "../services/EmailService";
+import * as NotificationService from "../services/NotificationService";
+import * as EventService from "../services/EventService";
+import * as UserService from "../services/UserService";
 
 export async function register(req: any, res: Response) {
   try {

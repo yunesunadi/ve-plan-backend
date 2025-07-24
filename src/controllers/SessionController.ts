@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-const SessionService = require("../services/SessionService");
+import * as SessionService from "../services/SessionService";
 
 export async function create(req: any, res: Response) {
   try {

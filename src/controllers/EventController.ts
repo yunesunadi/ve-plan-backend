@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-const EventService = require("../services/EventService");
-const NotificationService = require("../services/NotificationService");
+import * as EventService from "../services/EventService";
+import * as NotificationService from "../services/NotificationService";
 
 export async function create(req: any, res: Response) {
   try {

@@ -26,4 +26,4 @@ router.get("/:id", jwtAuth, attendeeAuth, EventRegisterController.hasRegistered)
 router.put("/approve", approve_validation, jwtAuth, organizerAuth, EventRegisterController.approveRegister);
 router.put("/meeting_started", approve_validation, jwtAuth, organizerAuth, EventRegisterController.startMeeting);
 
-module.exports = router;
+export default router;

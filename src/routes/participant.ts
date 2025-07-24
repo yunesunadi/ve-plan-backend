@@ -22,4 +22,4 @@ router.put("/:id", update_validation, jwtAuth, ParticipantController.update);
 router.get("/:id", jwtAuth, organizerAuth, ParticipantController.getAll);
 router.get("/:id/stay_times", jwtAuth, organizerAuth, ParticipantController.getStayTimes);
 
-module.exports = router;
+export default router;

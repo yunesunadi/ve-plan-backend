@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 import bcrypt from "bcrypt";
-const UserService = require("../services/UserService");
+import * as UserService from "../services/UserService";
 
 export async function hasRole(req: any, res: Response) {
   try {

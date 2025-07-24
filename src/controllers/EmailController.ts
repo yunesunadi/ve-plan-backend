@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-const EmailService = require("../services/EmailService");
+import * as EmailService from "../services/EmailService";
 
 export async function send(req: any, res: Response) {
   try {

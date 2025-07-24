@@ -1,9 +1,9 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 import { jwtDecode } from "jwt-decode";
-const MeetingService = require("../services/MeetingService");
-const EventRegisterService = require("../services/EventRegisterService");
-const EventInviteService = require("../services/EventInviteService");
+import * as MeetingService from "../services/MeetingService";
+import * as EventRegisterService from "../services/EventRegisterService";
+import * as EventInviteService from "../services/EventInviteService";
 
 export async function createToken(req: any, res: Response) {
   try { 

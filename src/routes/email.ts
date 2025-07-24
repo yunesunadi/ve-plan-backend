@@ -6,4 +6,4 @@ const organizerAuth = require("../middlewares/organizerAuth");
 
 router.post("/", jwtAuth, organizerAuth, EmailController.send);
 
-module.exports = router;
+export default router;

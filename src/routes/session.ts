@@ -18,4 +18,4 @@ router.get("/:id", jwtAuth, SessionController.getOneById);
 router.put("/:id", create_validation, jwtAuth, organizerAuth, SessionController.update);
 router.delete("/:id", jwtAuth, organizerAuth, SessionController.deleteOne);
 
-module.exports = router;
+export default router;

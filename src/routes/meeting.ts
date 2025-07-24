@@ -30,4 +30,4 @@ router.get("/:id", jwtAuth, organizerAuth, MeetingController.getOneById);
 router.put("/:id/start_time", update_start_validation, jwtAuth, organizerAuth, MeetingController.updateStartTime);
 router.put("/:id/end_time", update_end_validation, jwtAuth, organizerAuth, MeetingController.updateEndTime);
 
-module.exports = router;
+export default router;

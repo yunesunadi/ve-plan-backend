@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-const ParticipantService = require("../services/ParticipantService");
-const MeetingService = require("../services/MeetingService");
+import * as ParticipantService from "../services/ParticipantService";
+import * as MeetingService from "../services/MeetingService";
 
 export async function create(req: any, res: Response) {
   try {

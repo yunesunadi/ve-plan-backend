@@ -24,4 +24,4 @@ router.get("/:id/accepted_users", jwtAuth, organizerAuth, EventInviteController.
 router.put("/accept", accept_validation, jwtAuth, attendeeAuth, EventInviteController.acceptInvite);
 router.put("/meeting_started", invite_validation, jwtAuth, organizerAuth, EventInviteController.startMeeting);
 
-module.exports = router;
+export default router;

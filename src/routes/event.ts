@@ -26,4 +26,4 @@ router.get("/:id", jwtAuth, EventController.getOneById);
 router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.update);
 router.delete("/:id", jwtAuth, organizerAuth, EventController.deleteOne);
 
-module.exports = router;
+export default router;

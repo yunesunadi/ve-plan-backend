@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-const NotificationService = require("../services/NotificationService");
+import * as NotificationService from "../services/NotificationService";
 
 export async function getUserNotifications(req: any, res: Response) {
   try {

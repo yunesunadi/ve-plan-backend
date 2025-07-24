@@ -8,4 +8,4 @@ router.get("/unread_count", jwtAuth, NotificationController.getUnreadCount);
 router.post("/mark_as_read", jwtAuth, NotificationController.markAsRead);
 router.delete("/", jwtAuth, NotificationController.deleteNotifications);
 
-module.exports = router;
+export default router;

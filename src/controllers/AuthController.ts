@@ -3,9 +3,9 @@ import { isRequestInvalid } from "../helpers/utils";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-const UserService = require("../services/UserService");
-const EmailService = require("../services/EmailService");
-const NotificationService = require("../services/NotificationService");
+import * as UserService from "../services/UserService";
+import * as EmailService from "../services/EmailService";
+import * as NotificationService from "../services/NotificationService";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -270,7 +270,7 @@ export async function resetPassword(req: Request, res: Response) {
       });
     }
 
-    const user = await UserService.findByResetPasswordToken(token);
+    const user = await UserService.findByResetPasswordToken(token as string);
 
     if (!user) {
       return res.status(409).json({

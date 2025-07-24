@@ -1,7 +1,7 @@
 import { objectId } from "../helpers/utils";
-const SocketService = require("../libs/socket");
+import * as SocketService from "../libs/socket";
 const NotificationModel = require("../models/Notification");
-const UserService = require("./UserService");
+import * as UserService from "./UserService";
 
 interface CreateNotificationData {
   recipient: string;

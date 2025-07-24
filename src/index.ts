@@ -5,22 +5,22 @@ const server = createServer(app);
 import cors from "cors";
 import bodyParser from "body-parser";
 import path from "path";
-const authRouter = require("./routes/auth");
-const userRouter = require("./routes/user");
-const eventRouter = require("./routes/event");
-const sessionRouter = require("./routes/session");
-const eventRegisterRouter = require("./routes/event_register");
-const emailRouter = require("./routes/email");
-const eventInviteRouter = require("./routes/event_invite");
-const meetingRouter = require("./routes/meeting");
-const participantRouter = require("./routes/participant");
-const notificationRouter = require("./routes/notification");
+import authRouter from "./routes/auth";
+import userRouter from "./routes/user";
+import eventRouter from "./routes/event";
+import sessionRouter from "./routes/session";
+import eventRegisterRouter from "./routes/event_register";
+import emailRouter from "./routes/email";
+import eventInviteRouter from "./routes/event_invite";
+import meetingRouter from "./routes/meeting";
+import participantRouter from "./routes/participant";
+import notificationRouter from "./routes/notification";
 
 require("dotenv").config();
 require("./libs/connectdb");
 require("./libs/passport");
 
-const socket = require("./libs/socket");
+import * as socket from "./libs/socket";
 socket.initializeSocket(server);
 
 const corsOptions = {

@@ -2,7 +2,7 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
-const UserService = require('../services/UserService');
+import * as UserService from '../services/UserService';
 import jwt from 'jsonwebtoken';
 
 const options = {
