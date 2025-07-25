@@ -5,6 +5,8 @@ const fs = require("fs");
 const path = require("path");
 const MeetingModel = require("../models/Meeting");
 
+const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
+
 export function createToken(name: string, email: string, is_moderator: boolean) {  
   const privateKey = fs.readFileSync(path.join(__dirname, "privatekey.pem"), "utf8");
 
@@ -43,11 +45,11 @@ export function create(reqObj: any) {
 export function getOneById(event_id: string, user_id: string) {
   const event = objectId(event_id);
   const user = objectId(user_id);
-  return MeetingModel.findOne({ event, user });
+  return MeetingModel.findOne({ event, user }).populate("event").populate("user", omitted_user_fields);
 }
 
 export function getOneByEventId(event_id: string) {
-  return MeetingModel.findOne({ event: objectId(event_id) });
+  return MeetingModel.findOne({ event: objectId(event_id) }).populate("event").populate("user", omitted_user_fields);
 }
 
 export function update(id: string, meeting: any) {

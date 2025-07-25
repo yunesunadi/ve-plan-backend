@@ -2,15 +2,17 @@ import { objectId } from "../helpers/utils";
 
 const EventModel = require("../models/Event");
 
+const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
+
 export function create(reqObj: any) {
   return EventModel.create(reqObj);
 }
 
 export function getAll(role: string) {
   if (role === "organizer") {
-    return EventModel.find();
+    return EventModel.find().populate("user", omitted_user_fields);
   }
-  return EventModel.find({ type: "public" });
+  return EventModel.find({ type: "public" }).populate("user", omitted_user_fields);
 }
 
 const getQuery = (...query: any) => {
@@ -74,7 +76,7 @@ export function getAllByQuery(query: any) {
     }
   }
   
-  return result;
+  return result.populate("user", omitted_user_fields);
 }
 
 export function getMyEvents(query: any, user_id: string) {
@@ -114,11 +116,11 @@ export function getMyEvents(query: any, user_id: string) {
     }
   }
 
-  return result;
+  return result.populate("user", omitted_user_fields);
 }
 
 export function getOneById(id: string) {
-  return EventModel.findById(objectId(id)).populate("user", "-password");
+  return EventModel.findById(objectId(id)).populate("user", omitted_user_fields);
 }
 
 export function update(id: string, event: any) {
