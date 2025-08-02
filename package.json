@@ -6,12 +6,11 @@
   "scripts": {
     "start": "npx tsc && nodemon dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\"",
-    "build": "npx tsc"
+    "build": "npx tsc && cp -r src/email_templates dist/email_templates"
   },
   "author": "Yune Su Nadi",
   "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.4",
     "@types/socket.io": "^3.0.1",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.3",
@@ -24,6 +23,7 @@
     "jwt-decode": "^4.0.0",
     "mongoose": "^8.9.1",
     "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.10.1",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
     "passport-google-oauth20": "^2.0.0",
@@ -38,6 +38,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.10.2",
+    "@types/nodemailer": "^6.4.17",
     "@types/passport": "^1.0.17",
     "@types/passport-facebook": "^3.0.3",
     "@types/passport-google-oauth20": "^2.0.16",
