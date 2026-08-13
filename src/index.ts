@@ -3,7 +3,6 @@ import { createServer } from "http";
 const app = express();
 const server = createServer(app);
 import cors from "cors";
-import bodyParser from "body-parser";
 import path from "path";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
@@ -31,8 +30,8 @@ const PORT = process.env.PORT || 5000;
 const PREFIX = "/api/v1";
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.use(PREFIX + "/static", express.static(path.join(__dirname, "../dist/photos")));
 
