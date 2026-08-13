@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 const app = express();
 const server = createServer(app);
@@ -48,6 +48,11 @@ app.use(PREFIX + "/notifications", notificationRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });
+});
+
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.log("err", err);
+  res.status(500).json({ status: "error", message: "Something went wrong." });
 });
 
 server.listen(PORT, () => {
