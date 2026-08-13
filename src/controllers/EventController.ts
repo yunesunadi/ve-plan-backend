@@ -117,7 +117,7 @@ export async function getMyEvents(req: any, res: Response) {
 
 export async function getOneById(req: Request, res: Response) {
   try {
-    const event = await EventService.getOneById(req.params.id);
+    const event = await EventService.getOneById(req.params.id as string);
 
     if (!event) {
       return res.status(404).json({
@@ -186,7 +186,7 @@ export async function update(req: any, res: Response) {
 
 export async function deleteOne(req: Request, res: Response) {
   try {
-    const event = await EventService.getOneById(req.params.id);
+    const event = await EventService.getOneById(req.params.id as string);
 
     if (!event) {
       return res.status(404).json({
@@ -195,7 +195,7 @@ export async function deleteOne(req: Request, res: Response) {
       });
     }
 
-    await EventService.deleteOne(req.params.id);
+    await EventService.deleteOne(req.params.id as string);
 
     return res.status(200).json({
       status: "success",

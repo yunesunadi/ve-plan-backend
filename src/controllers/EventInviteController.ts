@@ -67,7 +67,7 @@ export async function invite(req: any, res: Response) {
 
 export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const invited_users = await EventInviteService.getAllByEventId(req.params.id);
+    const invited_users = await EventInviteService.getAllByEventId(req.params.id as string);
 
     return res.status(200).json({
       status: "success",
@@ -86,7 +86,7 @@ export async function getAllByEventId(req: Request, res: Response) {
 
 export async function getAllAcceptedByEventId(req: Request, res: Response) {
   try {
-    const invite_accepted_users = await EventInviteService.getAllAcceptedByEventId(req.params.id);
+    const invite_accepted_users = await EventInviteService.getAllAcceptedByEventId(req.params.id as string);
 
     return res.status(200).json({
       status: "success",

@@ -65,7 +65,7 @@ export async function getAll(req: any, res: Response) {
 
 export async function getOneById(req: Request, res: Response) {
   try {
-    const session = await SessionService.getOneById(req.params.id);
+    const session = await SessionService.getOneById(req.params.id as string);
 
     return res.status(200).json({
       status: "success",
@@ -112,7 +112,7 @@ export async function update(req: any, res: Response) {
 
 export async function deleteOne(req: Request, res: Response) {
   try {
-    const session = await SessionService.getOneById(req.params.id);
+    const session = await SessionService.getOneById(req.params.id as string);
 
     if (!session) {
       return res.status(404).json({
@@ -121,7 +121,7 @@ export async function deleteOne(req: Request, res: Response) {
       });
     }
 
-    await SessionService.deleteOne(req.params.id);
+    await SessionService.deleteOne(req.params.id as string);
 
     return res.status(200).json({
       status: "success",

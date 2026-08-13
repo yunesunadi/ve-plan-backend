@@ -128,7 +128,7 @@ export async function isRegisterApproved(req: any, res: Response) {
 
 export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const registered_users = await EventRegisterService.getAllByEventId(req.params.id, req.query);
+    const registered_users = await EventRegisterService.getAllByEventId(req.params.id as string, req.query);
 
     return res.status(200).json({
       status: "success",
@@ -147,7 +147,7 @@ export async function getAllByEventId(req: Request, res: Response) {
 
 export async function getAllApprovedByEventId(req: Request, res: Response) {
   try {
-    const approved_users = await EventRegisterService.getAllApprovedByEventId(req.params.id);
+    const approved_users = await EventRegisterService.getAllApprovedByEventId(req.params.id as string);
 
     return res.status(200).json({
       status: "success",
