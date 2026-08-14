@@ -5,6 +5,7 @@ const router = express.Router();
 const EventController = require("../controllers/EventController");
 const jwtAuth = require("../middlewares/jwtAuth");
 const organizerAuth = require("../middlewares/organizerAuth");
+const eventOwnerAuth = require("../middlewares/eventOwnerAuth");
 
 const create_validation = [
   body("title", "Title is required.").notEmpty(),
@@ -23,7 +24,7 @@ router.get("/events_by_query", jwtAuth, EventController.getAllByQuery);
 router.get("/own", jwtAuth, organizerAuth, EventController.getMyEvents);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
-router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.update);
-router.delete("/:id", jwtAuth, organizerAuth, EventController.deleteOne);
+router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, eventOwnerAuth, EventController.update);
+router.delete("/:id", jwtAuth, organizerAuth, eventOwnerAuth, EventController.deleteOne);
 
 export default router;

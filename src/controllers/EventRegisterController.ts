@@ -96,14 +96,7 @@ export async function isRegisterApproved(req: any, res: Response) {
   try {
     const registered_event = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
 
-    if (!registered_event) {
-      return res.status(404).json({
-        status: "error",
-        message: "This event hasn't been registered.",
-      });
-    }
-
-    if (!registered_event.register_approved) {
+    if (!registered_event || !registered_event.register_approved) {
       return res.status(200).json({
         status: "success",
         message: "This event hasn't been register-approved.",
