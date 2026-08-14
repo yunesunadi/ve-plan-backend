@@ -133,14 +133,15 @@ export async function verify(req: any, res: Response) {
       });
     }
 
+    await UserService.verifyUser(user._id);
+
+    user = await UserService.findById(user._id);
     user._id = user._id.toString();
     user = user.toJSON();
     delete user.password;
     delete user.verificationToken;
 
     const jwt_token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
-
-    await UserService.verifyUser(user._id);
 
     return res.status(200).json({
       status: "success",

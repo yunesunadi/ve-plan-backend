@@ -29,8 +29,11 @@ const getQuery = (...query: any) => {
 }
 
 export function getAllByQuery(query: any) {
-  let result, time_query = {}, category_query = {}, search_query = {}, date_query = {};
+  let time_query = {}, category_query = {}, search_query = {}, date_query = {};
   const currentDate = new Date();
+  const startOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+  let filter: any = { type: "public" };
 
   if (Object.entries(query).length > 0) {
     if (query.search_value) {
@@ -43,7 +46,7 @@ export function getAllByQuery(query: any) {
           time_query = { date: { $gt: currentDate } };
         break;
         case "happening":
-          time_query = { date: currentDate };
+          time_query = { date: { $gte: startOfDay, $lt: endOfDay } };
         break;
         case "past":
           time_query = { date: { $lt: currentDate } };
@@ -59,61 +62,49 @@ export function getAllByQuery(query: any) {
       date_query = { date: query.date };
     }
 
-    if (query.limit) {
-      result = EventModel.find(getQuery(search_query, time_query, category_query, date_query)).limit(query.limit);
-    }
-
-    if (query.offset) {
-      result = EventModel.find(getQuery(search_query, time_query, category_query, date_query)).skip(query.offset).limit(query.limit);
-    }
-  } else {
-    if (query.limit) {
-      result = EventModel.find({ type: "public" }).limit(query.limit);
-    }
-
-    if (query.offset) {
-      result = EventModel.find({ type: "public" }).skip(query.offset).limit(query.limit);
-    }
+    filter = getQuery(search_query, time_query, category_query, date_query);
   }
-  
+
+  let result = EventModel.find(filter);
+
+  if (query.offset) {
+    result = result.skip(query.offset);
+  }
+
+  if (query.limit) {
+    result = result.limit(query.limit);
+  }
+
   return result.populate("user", omitted_user_fields);
 }
 
 export function getMyEvents(query: any, user_id: string) {
-  let result, type_query = {};
+  let type_query = {};
 
-  if (Object.entries(query).length > 0) {
-    if (query.type) {
-      switch (query.type) {
-        case "all":
-          type_query = { };
-        break;
-        case "public":
-          type_query = { type: "public" };
-        break;
-        case "private":
-          type_query = { type: "private" };
-        break;
-      }
+  if (query.type) {
+    switch (query.type) {
+      case "all":
+        type_query = { };
+      break;
+      case "public":
+        type_query = { type: "public" };
+      break;
+      case "private":
+        type_query = { type: "private" };
+      break;
     }
+  }
 
-    const qry = { ...type_query, user: objectId(user_id) };
+  const qry = { ...type_query, user: objectId(user_id) };
 
-    if (query.limit) {
-      result = EventModel.find(qry).limit(query.limit);
-    }
+  let result = EventModel.find(qry);
 
-    if (query.offset) {
-      result = EventModel.find(qry).skip(query.offset).limit(query.limit);
-    }
-  } else {
-    if (query.limit) {
-      result = EventModel.find({ user: objectId(user_id) }).limit(query.limit);
-    }
+  if (query.offset) {
+    result = result.skip(query.offset);
+  }
 
-    if (query.offset) {
-      result = EventModel.find({ user: objectId(user_id) }).skip(query.offset).limit(query.limit);
-    }
+  if (query.limit) {
+    result = result.limit(query.limit);
   }
 
   return result.populate("user", omitted_user_fields);

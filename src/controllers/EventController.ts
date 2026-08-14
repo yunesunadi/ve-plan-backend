@@ -144,7 +144,23 @@ export async function getOneById(req: Request, res: Response) {
 export async function update(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
-    
+
+    const existing_event = await EventService.getOneById(req.params.id as string);
+
+    if (!existing_event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID."
+      });
+    }
+
+    if (existing_event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event."
+      });
+    }
+
     let updated_data;
 
     if (req.file) {
@@ -184,7 +200,7 @@ export async function update(req: any, res: Response) {
   }
 }
 
-export async function deleteOne(req: Request, res: Response) {
+export async function deleteOne(req: any, res: Response) {
   try {
     const event = await EventService.getOneById(req.params.id as string);
 
@@ -192,6 +208,13 @@ export async function deleteOne(req: Request, res: Response) {
       return res.status(404).json({
         status: "error",
         message: "There is no event with this ID."
+      });
+    }
+
+    if (event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event."
       });
     }
 

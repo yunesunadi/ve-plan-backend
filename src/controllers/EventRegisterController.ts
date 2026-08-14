@@ -97,8 +97,8 @@ export async function isRegisterApproved(req: any, res: Response) {
     const registered_event = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
 
     if (!registered_event) {
-      return res.status(500).json({
-        status: "success",
+      return res.status(404).json({
+        status: "error",
         message: "This event hasn't been registered.",
       });
     }
@@ -224,7 +224,7 @@ export async function approveRegister(req: any, res: Response) {
 
     if (!register_approved) {
       return res.status(500).json({
-        status: "success",
+        status: "error",
         message: "Failed to approve registration.",
       });
     }
@@ -268,7 +268,7 @@ export async function startMeeting(req: any, res: Response) {
 
     if (!meeting_started) {
       return res.status(500).json({
-        status: "success",
+        status: "error",
         message: "Failed to send meeting email.",
       });
     }

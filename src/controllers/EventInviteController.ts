@@ -147,7 +147,7 @@ export async function acceptInvite(req: any, res: Response) {
 
     if (!invite_accepted) {
       return res.status(500).json({
-        status: "success",
+        status: "error",
         message: "Failed to accept invitation.",
       });
     }
@@ -189,7 +189,7 @@ export async function startMeeting(req: any, res: Response) {
 
     if (!meeting_started) {
       return res.status(500).json({
-        status: "success",
+        status: "error",
         message: "Failed to send meeting email.",
       });
     }
