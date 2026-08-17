@@ -8,7 +8,13 @@ const MeetingModel = require("../models/Meeting");
 const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
 
 export function createToken(name: string, email: string, is_moderator: boolean) {  
-  const privateKey = fs.readFileSync(path.join(__dirname, "privatekey.pem"), "utf8");
+  const privateKeyPath = process.env.PRIVATE_KEY_PATH;
+
+  if (!privateKeyPath) {
+    throw new Error("PRIVATE_KEY_PATH is not configured");
+  }
+
+  const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
   const token = jwt.sign({
     aud: "jitsi",
