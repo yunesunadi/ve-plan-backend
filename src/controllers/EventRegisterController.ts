@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, isEventExpired } from "../helpers/utils";
 import * as EventRegisterService from "../services/EventRegisterService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
@@ -9,6 +9,22 @@ import * as UserService from "../services/UserService";
 export async function register(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
+
+    const event = await EventService.getOneById(req.body.event_id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "Event not found.",
+      });
+    }
+
+    if (isEventExpired(event.date, event.end_time)) {
+      return res.status(400).json({
+        status: "error",
+        message: "This event has already ended and can no longer be registered for.",
+      });
+    }
 
     const register = await EventRegisterService.register({
       event: req.body.event_id,

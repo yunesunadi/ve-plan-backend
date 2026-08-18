@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, isEventExpired } from "../helpers/utils";
 import * as EventInviteService from "../services/EventInviteService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
@@ -13,6 +13,20 @@ export async function invite(req: any, res: Response) {
     const user_id_list = req.body.user_id_list;
     const event_id = req.body.event_id;
     const event = await EventService.getOneById(event_id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "Event not found.",
+      });
+    }
+
+    if (isEventExpired(event.date, event.end_time)) {
+      return res.status(400).json({
+        status: "error",
+        message: "This event has already ended and can no longer be invited to.",
+      });
+    }
 
     const existing = await EventInviteService.getOneByEventAndUserId(event_id, user_id_list);
 
