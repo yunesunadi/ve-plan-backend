@@ -4,8 +4,14 @@ import * as path from "path";
 
 require("dotenv").config();
 
-const transporter = nodemailer.createTransport({
+const RETRYABLE_CODES = ["ETIMEDOUT", "ECONNECTION", "ESOCKET"];
+const MAX_ATTEMPTS = 3;
+
+const createTransporter = () => nodemailer.createTransport({
   service: process.env.SMTP_SERVICE,
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
   auth: {
     type: "OAuth2",
     user: process.env.SMTP_USER,
@@ -15,6 +21,20 @@ const transporter = nodemailer.createTransport({
     accessToken: process.env.OAUTH_ACCESS_TOKEN
   },
 });
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const sendWithRetry = async (mailOptions: any) => {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await createTransporter().sendMail(mailOptions);
+    } catch (error: any) {
+      const isRetryable = RETRYABLE_CODES.includes(error?.code);
+      if (!isRetryable || attempt === MAX_ATTEMPTS) throw error;
+      await sleep(1000 * attempt);
+    }
+  }
+};
 
 const getEmailTemplate = (templateName: string, variables: any) => {
   const templatePath = path.join(__dirname, "..", "email_templates", `${templateName}.html`);
@@ -55,7 +75,7 @@ export const send = async (obj: { action: string; recipient: string; additional:
     html: htmlContent,
   };
 
-  return transporter.sendMail(mailOptions);
+  return sendWithRetry(mailOptions);
 }
 
 const getEmailSubject = (action: string) => {
