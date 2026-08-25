@@ -6,7 +6,11 @@
   "scripts": {
     "start": "npx tsc && nodemon dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\"",
-    "build": "npx tsc && cp -r src/email_templates dist/email_templates"
+    "build": "npx tsc && cp -r src/email_templates dist/email_templates",
+    "pm2:start": "npm run build && pm2 start ecosystem.config.js",
+    "pm2:restart": "npm run build && pm2 restart ecosystem.config.js",
+    "pm2:stop": "pm2 stop ecosystem.config.js",
+    "pm2:logs": "pm2 logs ve-plan-backend"
   },
   "author": "Yune Su Nadi",
   "license": "ISC",
