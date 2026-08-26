@@ -6,7 +6,7 @@ module.exports = {
       cwd: __dirname,
       instances: 1,
       exec_mode: "fork",
-      watch: true,
+      watch: false,
       autorestart: true,
       max_memory_restart: "500M",
       env: {
