@@ -8,7 +8,9 @@ const RETRYABLE_CODES = ["ETIMEDOUT", "ECONNECTION", "ESOCKET"];
 const MAX_ATTEMPTS = 3;
 
 const createTransporter = () => nodemailer.createTransport({
-  service: process.env.SMTP_SERVICE,
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 10000,
