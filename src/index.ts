@@ -3,6 +3,7 @@ import { createServer } from "http";
 const app = express();
 const server = createServer(app);
 import cors from "cors";
+import morgan from "morgan";
 import path from "path";
 import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
@@ -30,6 +31,7 @@ const PORT = process.env.PORT || 5000;
 const PREFIX = "/api/v1";
 
 app.use(cors(corsOptions));
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
