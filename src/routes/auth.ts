@@ -34,6 +34,10 @@ const reset_password_validation = [
   body("password", "Password must be at least 6 characters.").isLength({ min: 6 }),
 ];
 
+const facebook_token_validation = [
+  body("access_token", "Facebook access token is required.").notEmpty(),
+];
+
 const profile_upload = multer({ dest: "dist/photos/profiles/"});
 
 const oauthState = (req: express.Request): "mobile" | "web" => req.query.client === "mobile" ? "mobile" : "web";
@@ -48,5 +52,6 @@ router.get("/google", (req, res, next) => passport.authenticate("google", { scop
 router.get("/google/callback", passport.authenticate("google", { session: false, failureRedirect: "/login" }), AuthController.googleCallback);
 router.get("/facebook", (req, res, next) => passport.authenticate("facebook", { scope: ["public_profile", "email"], state: oauthState(req) })(req, res, next));
 router.get("/facebook/callback", passport.authenticate("facebook", { session: false, failureRedirect: "/login" }), AuthController.facebookCallback);
+router.post("/facebook/token", facebook_token_validation, AuthController.facebookToken);
 
 export default router;

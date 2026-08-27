@@ -69,22 +69,12 @@ passport.use(new FacebookStrategy({
       return done(new Error('No email found in Facebook profile'));
     }
 
-    let user = await UserService.findByEmail(profile.emails[0].value);
-
-    if (user && !user.facebookId) {
-      user.facebookId = profile.id;
-      await user.save();
-    }
-
-    if (!user) {
-      user = await UserService.create({
-        name: `${profile._json.first_name} ${profile._json.last_name}`,
-        email: profile.emails[0].value,
-        facebookId: profile.id,
-        isVerified: true,
-        profile: profile.photos?.[0]?.value
-      });
-    }
+    let user: any = await UserService.upsertFacebookUser({
+      facebookId: profile.id,
+      name: `${profile._json.first_name} ${profile._json.last_name}`,
+      email: profile.emails[0].value,
+      profile: profile.photos?.[0]?.value,
+    });
 
     user._id = user._id.toString();
     user = user.toJSON();

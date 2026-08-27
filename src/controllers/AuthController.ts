@@ -6,6 +6,7 @@ import crypto from "crypto";
 import * as UserService from "../services/UserService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
+import * as FacebookService from "../services/FacebookService";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -342,4 +343,55 @@ function socialLoginRedirect(req: any): string {
   return req.query.state === "mobile"
     ? `veplanauth://oauth?token=${token}`
     : `${process.env.FRONTEND_URL}/social_login_redirect?token=${token}`;
+}
+
+export async function facebookToken(req: Request, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const result = await FacebookService.verifyAccessToken(req.body.access_token);
+
+    if (!result.ok) {
+      return res.status(401).json({
+        status: "error",
+        message: result.message,
+      });
+    }
+
+    const { profile } = result;
+
+    if (!profile.email) {
+      return res.status(400).json({
+        status: "error",
+        message: "Your Facebook account has no email address. Add one to your Facebook account or sign up with email instead.",
+      });
+    }
+
+    let user: any = await UserService.upsertFacebookUser({
+      facebookId: profile.id,
+      name: profile.name,
+      email: profile.email,
+      profile: profile.picture,
+    });
+
+    user._id = user._id.toString();
+    user = user.toJSON();
+    delete user.password;
+    delete user.verificationToken;
+
+    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Login successfully.",
+      token,
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
 }

@@ -10,6 +10,32 @@ export function findByEmail(email: string) {
   return UserModel.findOne({ email });
 }
 
+export async function upsertFacebookUser(params: {
+  facebookId: string;
+  name: string;
+  email: string;
+  profile?: string;
+}) {
+  let user = await UserModel.findOne({ email: params.email });
+
+  if (user && !user.facebookId) {
+    user.facebookId = params.facebookId;
+    await user.save();
+  }
+
+  if (!user) {
+    user = await create({
+      name: params.name,
+      email: params.email,
+      facebookId: params.facebookId,
+      isVerified: true,
+      profile: params.profile,
+    });
+  }
+
+  return user;
+}
+
 export function findById(id: string) {
   return UserModel.findById(objectId(id)).select("-password");
 }
