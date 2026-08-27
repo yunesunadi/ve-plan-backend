@@ -340,6 +340,6 @@ export async function facebookCallback(req: any, res: Response) {
 function socialLoginRedirect(req: any): string {
   const token = req.user.token;
   return req.query.state === "mobile"
-    ? `veplan://social_login_redirect?token=${token}`
+    ? `veplanauth://oauth?token=${token}`
     : `${process.env.FRONTEND_URL}/social_login_redirect?token=${token}`;
 }
