@@ -308,7 +308,7 @@ export async function googleCallback(req: any, res: Response) {
       });
     }
 
-    return res.redirect(`${process.env.FRONTEND_URL}/social_login_redirect?token=${req.user.token}`);
+    return res.redirect(socialLoginRedirect(req));
   } catch (err) {
     return res.status(500).json({
       status: "error",
@@ -327,7 +327,7 @@ export async function facebookCallback(req: any, res: Response) {
       });
     }
 
-    return res.redirect(`${process.env.FRONTEND_URL}/social_login_redirect?token=${req.user.token}`);
+    return res.redirect(socialLoginRedirect(req));
   } catch (err) {
     return res.status(500).json({
       status: "error",
@@ -335,4 +335,11 @@ export async function facebookCallback(req: any, res: Response) {
       error: err
     });
   }
+}
+
+function socialLoginRedirect(req: any): string {
+  const token = req.user.token;
+  return req.query.state === "mobile"
+    ? `veplan://social_login_redirect?token=${token}`
+    : `${process.env.FRONTEND_URL}/social_login_redirect?token=${token}`;
 }

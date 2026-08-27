@@ -36,15 +36,17 @@ const reset_password_validation = [
 
 const profile_upload = multer({ dest: "dist/photos/profiles/"});
 
+const oauthState = (req: express.Request): "mobile" | "web" => req.query.client === "mobile" ? "mobile" : "web";
+
 router.post("/register", profile_upload.single("profile"), register_validation, AuthController.register);
 router.post("/login", login_validation, AuthController.login);
 router.post("/role", role_validation, jwtAuth, AuthController.role)
 router.post("/verify_email", AuthController.verify);
 router.post("/forgot_password", forgot_password_validation, AuthController.forgotPassword);
 router.post("/reset_password", reset_password_validation, AuthController.resetPassword);
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", (req, res, next) => passport.authenticate("google", { scope: ["profile", "email"], state: oauthState(req) })(req, res, next));
 router.get("/google/callback", passport.authenticate("google", { session: false, failureRedirect: "/login" }), AuthController.googleCallback);
-router.get("/facebook", passport.authenticate("facebook", { scope: ["public_profile", "email"] }));
+router.get("/facebook", (req, res, next) => passport.authenticate("facebook", { scope: ["public_profile", "email"], state: oauthState(req) })(req, res, next));
 router.get("/facebook/callback", passport.authenticate("facebook", { session: false, failureRedirect: "/login" }), AuthController.facebookCallback);
 
 export default router;
