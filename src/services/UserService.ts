@@ -70,8 +70,7 @@ export function update(id: string, data: any) {
     { _id: objectId(id) },
     {
       profile: data.profile,
-      name: data.name,
-      email: data.email
+      name: data.name
     }
   );
 }

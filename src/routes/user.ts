@@ -8,8 +8,6 @@ const organizerAuth = require("../middlewares/organizerAuth");
 
 const edit_profile_validation = [
   body("name", "Name is required.").notEmpty(),
-  body("email", "Email is required.").notEmpty(),
-  body("email", "Invalid email.").isEmail(),
 ];
 
 const update_password_validation = [

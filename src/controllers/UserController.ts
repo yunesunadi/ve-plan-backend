@@ -91,21 +91,12 @@ export async function update(req: any, res: Response) {
     if(isRequestInvalid(req, res)) return;
 
     const filename = req.file?.filename;
-    const existed_user = await UserService.findByEmail(req.body.email);
-
-    if (req.user.email !== req.body.email && existed_user) {
-      return res.status(409).json({
-        status: "error",
-        message: "User with this email is already existed.",
-      });
-    }
 
     const updated = await UserService.update(
       req.user._id,
       {
         profile: filename,
         name: req.body.name,
-        email: req.body.email,
       }
     );
 
