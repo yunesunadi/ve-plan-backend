@@ -42,10 +42,13 @@ export async function getAllById(req: any, res: Response) {
       });
     }
 
+    const data = user.toJSON();
+    data.hasPassword = await UserService.hasPassword(req.user._id);
+
     return res.status(200).json({
       status: "success",
       message: "Fetch user successfully.",
-      data: user
+      data
     })
   } catch (err: any) {
     console.log("err", err);
@@ -132,6 +135,14 @@ export async function updatePassword(req: any, res: Response) {
     if(isRequestInvalid(req, res)) return;
 
     const user = await UserService.findByEmail(req.user.email);
+
+    if (!user || !user.password) {
+      return res.status(400).json({
+        status: "error",
+        message: "This account uses social login and has no password."
+      });
+    }
+
     const isCurrentPasswordCorrect = await bcrypt.compare(req.body.current_password, user.password);
     const salt = await bcrypt.genSalt();
     const hash = await bcrypt.hash(req.body.new_password, salt);

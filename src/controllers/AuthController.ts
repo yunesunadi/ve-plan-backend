@@ -226,6 +226,13 @@ export async function forgotPassword(req: Request, res: Response) {
       });
     }
 
+    if (!user.password && (user.googleId || user.facebookId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "This account uses social login and has no password."
+      });
+    }
+
     const resetToken = crypto.randomBytes(32).toString("hex");
     const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
 
@@ -278,6 +285,13 @@ export async function resetPassword(req: Request, res: Response) {
       return res.status(409).json({
         status: "error",
         message: "Invalid or expired password reset token."
+      });
+    }
+
+    if (!user.password && (user.googleId || user.facebookId)) {
+      return res.status(400).json({
+        status: "error",
+        message: "This account uses social login and has no password."
       });
     }
 

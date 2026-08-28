@@ -40,6 +40,11 @@ export function findById(id: string) {
   return UserModel.findById(objectId(id)).select("-password");
 }
 
+export async function hasPassword(id: string) {
+  const user = await UserModel.findById(objectId(id)).select("password");
+  return !!user?.password;
+}
+
 export function setRole(id: string, role: string) {
   return UserModel.findByIdAndUpdate(objectId(id), { role }, { new: true });
 }
