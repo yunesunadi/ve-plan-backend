@@ -29,5 +29,7 @@ router.get("/:id/attendee", jwtAuth, attendeeAuth, MeetingController.getOneByEve
 router.get("/:id", jwtAuth, organizerAuth, MeetingController.getOneById);
 router.put("/:id/start_time", update_start_validation, jwtAuth, organizerAuth, MeetingController.updateStartTime);
 router.put("/:id/end_time", update_end_validation, jwtAuth, organizerAuth, MeetingController.updateEndTime);
+router.put("/:id/end", jwtAuth, organizerAuth, MeetingController.endMeeting);
+router.put("/:id/reopen", jwtAuth, organizerAuth, MeetingController.reopenMeeting);
 
 export default router;

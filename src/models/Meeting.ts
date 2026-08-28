@@ -33,6 +33,15 @@ const MeetingSchema = new Schema({
     type: Number,
     require: false,
   },
+  ended: {
+    type: Boolean,
+    default: false
+  },
+  ended_at: {
+    type: Date,
+    require: false,
+    default: null
+  },
 },
 { 
   timestamps: true,

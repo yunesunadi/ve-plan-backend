@@ -19,6 +19,7 @@ const NotificationSchema = new Schema({
       "register_approved",
       "event_invited",
       "meeting_started",
+      "meeting_ended",
       "event_updated",
     ]
   },

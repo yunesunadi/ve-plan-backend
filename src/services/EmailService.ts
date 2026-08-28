@@ -92,5 +92,7 @@ const getEmailSubject = (action: string) => {
       return "Event Invitation";
     case "meeting_started":
       return "Meeting Started";
+    case "meeting_ended":
+      return "Meeting Ended";
   }
 }

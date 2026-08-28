@@ -124,6 +124,26 @@ export const sendMeetingStarted = async (user_id_list: string[], event_title: st
   }
 }
 
+export const sendMeetingEnded = async (user_id_list: string[], event_title: string) => {
+  try {
+    const notifications = await NotificationModel.insertMany(
+      user_id_list.map((user_id: string) => ({
+        recipient: user_id,
+        type: "meeting_ended",
+        title: "Meeting Ended",
+        message: `The meeting for the event "${event_title}" has ended.`
+      }))
+    );
+
+    notifications.forEach((notification: any) => {
+      SocketService.sendToUser(notification.recipient, "notification", notification);
+    });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    throw error;
+  }
+}
+
 export const sendEventUpdated = async (event: any) => {
   const recipients = await UserService.findAllVerified();
 

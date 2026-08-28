@@ -4,6 +4,8 @@ import { jwtDecode } from "jwt-decode";
 import * as MeetingService from "../services/MeetingService";
 import * as EventRegisterService from "../services/EventRegisterService";
 import * as EventInviteService from "../services/EventInviteService";
+import * as EmailService from "../services/EmailService";
+import * as NotificationService from "../services/NotificationService";
 
 export async function createToken(req: any, res: Response) {
   try { 
@@ -106,7 +108,7 @@ export async function isStarted(req: any, res: Response) {
     const registered = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
     const invited = await EventInviteService.getHasInvited(req.params.id, req.user._id);
     
-    if (meeting && ((registered && registered.meeting_started) || (invited && invited.meeting_started))) {
+    if (meeting && !meeting.ended && ((registered && registered.meeting_started) || (invited && invited.meeting_started))) {
       return res.status(200).json({
         status: "success",
         message: "Meeting for this event has already started.",
@@ -213,6 +215,108 @@ export async function updateStartTime(req: any, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Update meeting successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+async function notifyMeetingAttendees(event_id: string, event_title: string, action: "meeting_started" | "meeting_ended") {
+  const registered = await EventRegisterService.getAllMeetingStartedByEventId(event_id);
+  const invited = await EventInviteService.getAllMeetingStartedByEventId(event_id);
+
+  const recipients = [...new Map(
+    [...registered, ...invited]
+      .filter((item: any) => item.user)
+      .map((item: any) => [String(item.user._id), item.user])
+  ).values()];
+
+  await Promise.all(recipients.map(async (user: any) => {
+    await EmailService.send({
+      action,
+      recipient: user.email,
+      additional: {
+        name: user.name,
+        event_title,
+      }
+    });
+  }));
+
+  const user_id_list = recipients.map((user: any) => String(user._id));
+
+  if (action === "meeting_ended") {
+    await NotificationService.sendMeetingEnded(user_id_list, event_title);
+  } else {
+    await NotificationService.sendMeetingStarted(user_id_list, event_title);
+  }
+}
+
+export async function endMeeting(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+
+    if (!meeting) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no meeting for this event.",
+      });
+    }
+
+    const updated_meeting = await MeetingService.setEnded(meeting._id, true);
+
+    if (!updated_meeting) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error ending meeting.",
+      });
+    }
+
+    await notifyMeetingAttendees(req.params.id, meeting.event.title, "meeting_ended");
+
+    return res.status(200).json({
+      status: "success",
+      message: "Meeting ended.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong.",
+      error: err
+    });
+  }
+}
+
+export async function reopenMeeting(req: any, res: Response) {
+  try {
+    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
+
+    if (!meeting) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no meeting for this event.",
+      });
+    }
+
+    const updated_meeting = await MeetingService.setEnded(meeting._id, false);
+
+    if (!updated_meeting) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error reopening meeting.",
+      });
+    }
+
+    await notifyMeetingAttendees(req.params.id, meeting.event.title, "meeting_started");
+
+    return res.status(200).json({
+      status: "success",
+      message: "Meeting reopened.",
     });
   } catch (err: any) {
     console.log("err", err);

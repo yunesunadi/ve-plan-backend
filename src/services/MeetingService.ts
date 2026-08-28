@@ -61,3 +61,11 @@ export function getOneByEventId(event_id: string) {
 export function update(id: string, meeting: any) {
   return MeetingModel.findByIdAndUpdate(objectId(id), meeting, { new: true });
 }
+
+export function setEnded(id: string, ended: boolean) {
+  return MeetingModel.findByIdAndUpdate(
+    objectId(id),
+    { ended, ended_at: ended ? new Date() : null },
+    { new: true }
+  );
+}
