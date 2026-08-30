@@ -21,6 +21,13 @@ export async function invite(req: any, res: Response) {
       });
     }
 
+    if (event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event.",
+      });
+    }
+
     if (isEventExpired(event.date, event.end_time)) {
       return res.status(400).json({
         status: "error",

@@ -213,9 +213,35 @@ export async function getAllApprovedByUserId(req: any, res: Response) {
 
 export async function approveRegister(req: any, res: Response) {
   try {
-    const user_id_list = req.body.user_id_list;
+    if (isRequestInvalid(req, res)) return;
+
+    const requested_user_ids = Array.isArray(req.body.user_id_list) ? req.body.user_id_list : [];
     const event = await EventService.getOneById(req.body.event_id);
-    
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "Event not found.",
+      });
+    }
+
+    if (event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event.",
+      });
+    }
+
+    const pending = await EventRegisterService.getPendingByEventAndUsers(req.body.event_id, requested_user_ids);
+    const user_id_list = pending.map((registration: any) => registration.user.toString());
+
+    if (user_id_list.length < 1) {
+      return res.status(200).json({
+        status: "success",
+        message: "No pending registrations to approve.",
+      });
+    }
+
     await Promise.all(user_id_list.map(async (user_id: string) => {
       const user = await UserService.findById(user_id);
 
@@ -237,9 +263,9 @@ export async function approveRegister(req: any, res: Response) {
         message: "Failed to approve registration.",
       });
     }
-    
+
     await NotificationService.sendRegistrationApproved(user_id_list, event.title);
-    
+
     return res.status(200).json({
       status: "success",
       message: "Registration has been successfully approved.",

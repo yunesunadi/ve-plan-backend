@@ -2,12 +2,40 @@ import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
 import * as ParticipantService from "../services/ParticipantService";
 import * as MeetingService from "../services/MeetingService";
+import * as EventRegisterService from "../services/EventRegisterService";
+import * as EventInviteService from "../services/EventInviteService";
 
 export async function create(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const existing = await ParticipantService.getOne(req.body.event, req.user._id);
+    const event_id = req.body.event;
+
+    const [registered, invited, meeting] = await Promise.all([
+      EventRegisterService.getHasRegistered(event_id, req.user._id),
+      EventInviteService.getHasInvited(event_id, req.user._id),
+      MeetingService.getOneByEventId(event_id),
+    ]);
+
+    const is_participant = Boolean(
+      (registered && registered.register_approved) || (invited && invited.invitation_accepted)
+    );
+
+    if (!is_participant) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a participant of this event.",
+      });
+    }
+
+    if (!meeting || meeting.ended) {
+      return res.status(403).json({
+        status: "error",
+        message: "There is no live meeting for this event.",
+      });
+    }
+
+    const existing = await ParticipantService.getOne(event_id, req.user._id);
 
     if (existing) {
       return res.status(409).json({
@@ -17,18 +45,23 @@ export async function create(req: any, res: Response) {
     }
 
     const participant = await ParticipantService.create({
-      event: req.body.event,
+      event: event_id,
       user: req.user._id,
-      room_name: req.body.room_name,
-      start_time: req.body.start_time
+      room_name: meeting.room_name,
+      start_time: new Date(),
     });
 
-    if (participant) {
-      return res.status(201).json({
-        status: "success",
-        message: "Create participant successfully.",
+    if (!participant) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error creating participant.",
       });
     }
+
+    return res.status(201).json({
+      status: "success",
+      message: "Create participant successfully.",
+    });
   } catch (err: any) {
     console.log("err", err);
     return res.status(500).json({
@@ -80,19 +113,20 @@ export async function updateNoEndTime(req: any, res: Response) {
 
     if (participants.length < 1) {
       return res.status(200).json({
-        status: "error",
-        message: "No participant found.",
+        status: "success",
+        message: "No participants to update.",
+        data: []
       });
     }
 
-    participants.forEach(async (participant: any) => {
-      const milisecond = new Date().getTime() - new Date(participant.start_time).getTime();
-      const minute = Math.round(milisecond / 60000);
+    await Promise.all(participants.map(async (participant: any) => {
+      const now = new Date();
+      const minute = Math.round((now.getTime() - new Date(participant.start_time).getTime()) / 60000);
       await ParticipantService.update(participant._id, {
-        end_time: new Date().toISOString(),
+        end_time: now.toISOString(),
         duration: minute
       });
-    });
+    }));
 
     return res.status(200).json({
       status: "success",

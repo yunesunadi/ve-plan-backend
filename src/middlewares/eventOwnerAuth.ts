@@ -1,7 +1,15 @@
 import { NextFunction, Response } from "express";
+import mongoose from "mongoose";
 import * as EventService from "../services/EventService";
 
 module.exports = async (req: any, res: Response, next: NextFunction) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({
+      status: "error",
+      message: "There is no event with this ID."
+    });
+  }
+
   const event = await EventService.getOneById(req.params.id);
 
   if (!event) {

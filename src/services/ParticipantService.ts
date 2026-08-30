@@ -20,7 +20,9 @@ export function update(id: string, participant: any) {
 
 export function getAll(event_id: string) {
   const event = objectId(event_id);
-  return ParticipantModel.find({ event }).populate("user", omitted_user_fields);
+  return ParticipantModel.find({ event })
+    .populate("user", omitted_user_fields)
+    .sort({ start_time: 1, _id: 1 });
 }
 
 export function getAllWithNoEndTime(event_id: string) {

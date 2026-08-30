@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { objectId } from "../helpers/utils";
 
 const EventRegisterModel = require("../models/EventRegister");
@@ -48,6 +49,14 @@ export function getAllByUserId(user_id: string) {
 export function getAllApprovedByUserId(user_id: string) {
   const user = objectId(user_id);
   return EventRegisterModel.find({ user, register_approved: true }).populate("user", omitted_user_fields).populate("event");
+}
+
+export function getPendingByEventAndUsers(event_id: string, user_id_list: string[]) {
+  const event = objectId(event_id);
+  const users = user_id_list
+    .filter((user_id: string) => mongoose.isValidObjectId(user_id))
+    .map((user_id: string) => objectId(user_id));
+  return EventRegisterModel.find({ event, user: { $in: users }, register_approved: false });
 }
 
 export function approveRegister(user_id_list: string[], event_id: string) {
