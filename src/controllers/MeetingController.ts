@@ -218,12 +218,10 @@ export async function isStarted(req: any, res: Response) {
 
 export async function getOneById(req: any, res: Response) {
   try {
-    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
-
     return res.status(200).json({
       status: "success",
       message: "Fetch meeting successfully.",
-      data: meeting
+      data: req.meeting
     });
   } catch (err: any) {
      console.log("err", err);
@@ -286,7 +284,7 @@ export async function getOneByEventId(req: any, res: Response) {
    }
 }
 
-export async function isExpired(req: any, res: Response) {
+export async function isExpired(_req: any, res: Response) {
   try {
     return res.status(200).json({
       status: "success",
@@ -307,9 +305,10 @@ export async function updateStartTime(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
-    const updated_meeting = await MeetingService.update(meeting._id, req.body);
-    
+    const updated_meeting = await MeetingService.update(req.meeting._id, {
+      start_time: req.body.start_time
+    });
+
     if (!updated_meeting) {
       return res.status(500).json({
         status: "error",
@@ -363,15 +362,7 @@ async function notifyMeetingAttendees(event_id: string, event_title: string, act
 
 export async function endMeeting(req: any, res: Response) {
   try {
-    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
-
-    if (!meeting) {
-      return res.status(404).json({
-        status: "error",
-        message: "There is no meeting for this event.",
-      });
-    }
-
+    const meeting = req.meeting;
     const updated_meeting = await MeetingService.setEnded(meeting._id, true);
 
     if (!updated_meeting) {
@@ -399,15 +390,7 @@ export async function endMeeting(req: any, res: Response) {
 
 export async function reopenMeeting(req: any, res: Response) {
   try {
-    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
-
-    if (!meeting) {
-      return res.status(404).json({
-        status: "error",
-        message: "There is no meeting for this event.",
-      });
-    }
-
+    const meeting = req.meeting;
     const updated_meeting = await MeetingService.setEnded(meeting._id, false);
 
     if (!updated_meeting) {
@@ -437,14 +420,19 @@ export async function updateEndTime(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
-    const milisecond = new Date(req.body.end_time).getTime() - new Date(meeting.start_time).getTime();
-    const minute = Math.round(milisecond / 60000);
+    const meeting = req.meeting;
+    let duration: number | null = null;
+
+    if (meeting.start_time) {
+      const milisecond = new Date(req.body.end_time).getTime() - new Date(meeting.start_time).getTime();
+      duration = Math.round(milisecond / 60000);
+    }
+
     const updated_meeting = await MeetingService.update(meeting._id, {
-      ...req.body,
-      duration: minute
+      end_time: req.body.end_time,
+      duration
     });
-    
+
     if (!updated_meeting) {
       return res.status(500).json({
         status: "error",

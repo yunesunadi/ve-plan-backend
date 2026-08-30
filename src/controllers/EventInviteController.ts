@@ -182,10 +182,26 @@ export async function acceptInvite(req: any, res: Response) {
 
 export async function startMeeting(req: any, res: Response) {
   try {
+    if (isRequestInvalid(req, res)) return;
+
     const user_id_list = req.body.user_id_list;
     const event_id = req.body.event_id;
     const event = await EventService.getOneById(event_id);
-    
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID.",
+      });
+    }
+
+    if (event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event.",
+      });
+    }
+
     await Promise.all(user_id_list.map(async (user_id: string) => {
       const user = await UserService.findById(user_id);
 

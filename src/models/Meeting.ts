@@ -15,11 +15,6 @@ const MeetingSchema = new Schema({
     type: String,
     require: true,
   },
-  token: {
-    type: String,
-    required: false,
-    default: null,
-  },
   start_time: {
     type: Date,
     require: false,

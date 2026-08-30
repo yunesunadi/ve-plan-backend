@@ -15,6 +15,12 @@ const approve_validation = [
   body("event_id", "Event ID is required.").notEmpty(),
 ];
 
+const start_meeting_validation = [
+  body("user_id_list", "User ID list is required.").isArray({ min: 1 }),
+  body("event_id", "Event ID is required.").notEmpty().bail()
+    .isMongoId().withMessage("Invalid event id."),
+];
+
 router.post("/", register_validation, jwtAuth, attendeeAuth, EventRegisterController.register);
 router.delete("/:id", jwtAuth, attendeeAuth, EventRegisterController.unregister);
 router.get("/events/approved", jwtAuth, attendeeAuth, EventRegisterController.getAllApprovedByUserId);
@@ -24,6 +30,6 @@ router.get("/:id/users/approved", jwtAuth, organizerAuth, EventRegisterControlle
 router.get("/:id/users", jwtAuth, organizerAuth, EventRegisterController.getAllByEventId);
 router.get("/:id", jwtAuth, attendeeAuth, EventRegisterController.hasRegistered);
 router.put("/approve", approve_validation, jwtAuth, organizerAuth, EventRegisterController.approveRegister);
-router.put("/meeting_started", approve_validation, jwtAuth, organizerAuth, EventRegisterController.startMeeting);
+router.put("/meeting_started", start_meeting_validation, jwtAuth, organizerAuth, EventRegisterController.startMeeting);
 
 export default router;
