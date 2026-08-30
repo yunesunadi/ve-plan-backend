@@ -42,6 +42,14 @@ export function maskEmail(email: string) {
   return `${visible}${domain}`;
 }
 
+export async function bestEffort(label: string, task: () => Promise<unknown>) {
+  try {
+    await task();
+  } catch (err) {
+    console.log(`best-effort task failed: ${label}`, err);
+  }
+}
+
 export function isEventExpired(event_date: Date | string, event_end_time: Date | string) {
   const date = new Date(event_date);
   const time = new Date(event_end_time);

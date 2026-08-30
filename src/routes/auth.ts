@@ -21,7 +21,7 @@ const login_validation = [
 ];
 
 const role_validation = [
-  body("role", "Role is required.").notEmpty(),
+  body("role", "Role must be either organizer or attendee.").isIn(["organizer", "attendee"]),
 ];
 
 const forgot_password_validation = [

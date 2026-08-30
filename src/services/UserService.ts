@@ -47,8 +47,12 @@ export async function hasPassword(id: string) {
   return !!user?.password;
 }
 
-export function setRole(id: string, role: string) {
-  return UserModel.findByIdAndUpdate(objectId(id), { role }, { new: true });
+export function setRoleIfUnset(id: string, role: string) {
+  return UserModel.findOneAndUpdate(
+    { _id: objectId(id), $or: [{ role: { $exists: false } }, { role: null }] },
+    { role },
+    { new: true }
+  );
 }
 
 export function getRole(id: string) {

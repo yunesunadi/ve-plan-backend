@@ -75,8 +75,8 @@ export function update(id: string, meeting: any) {
 }
 
 export function setEnded(id: string, ended: boolean) {
-  return MeetingModel.findByIdAndUpdate(
-    objectId(id),
+  return MeetingModel.findOneAndUpdate(
+    { _id: objectId(id), ended: !ended },
     { ended, ended_at: ended ? new Date() : null },
     { new: true }
   );

@@ -44,22 +44,29 @@ const EventSchema = new Schema({
   versionKey: false
 });
 
-EventSchema.pre('findOneAndDelete', async function (next) {
+async function cascadeEventDeletes(this: any, next: (err?: any) => void) {
   try {
-    const event = await mongoose.model("Event").findOne(this.getQuery());
+    const events = await mongoose.model("Event").find(this.getQuery()).select("_id");
+    const ids = events.map((event: any) => event._id);
 
-    if (event) {
-      await mongoose.model("Session").deleteMany({ event: event._id });
-      await mongoose.model("EventRegister").deleteMany({ event: event._id });
-      await mongoose.model("EventInvite").deleteMany({ event: event._id });
-      await mongoose.model("Meeting").deleteMany({ event: event._id });
-      await mongoose.model("Participant").deleteMany({ event: event._id });
+    if (ids.length > 0) {
+      await Promise.all([
+        mongoose.model("Session").deleteMany({ event: { $in: ids } }),
+        mongoose.model("EventRegister").deleteMany({ event: { $in: ids } }),
+        mongoose.model("EventInvite").deleteMany({ event: { $in: ids } }),
+        mongoose.model("Meeting").deleteMany({ event: { $in: ids } }),
+        mongoose.model("Participant").deleteMany({ event: { $in: ids } }),
+      ]);
     }
 
     next();
   } catch (err: any) {
     next(err);
   }
-});
+}
+
+EventSchema.pre("findOneAndDelete", cascadeEventDeletes);
+EventSchema.pre("deleteOne", { document: false, query: true }, cascadeEventDeletes);
+EventSchema.pre("deleteMany", { document: false, query: true }, cascadeEventDeletes);
 
 module.exports = mongoose.model("Event", EventSchema);

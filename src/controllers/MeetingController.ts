@@ -358,9 +358,9 @@ export async function endMeeting(req: any, res: Response) {
     const updated_meeting = await MeetingService.setEnded(meeting._id, true);
 
     if (!updated_meeting) {
-      return res.status(500).json({
-        status: "error",
-        message: "Error ending meeting.",
+      return res.status(200).json({
+        status: "success",
+        message: "Meeting is already ended.",
       });
     }
 
@@ -385,9 +385,9 @@ export async function reopenMeeting(req: any, res: Response) {
     const updated_meeting = await MeetingService.setEnded(meeting._id, false);
 
     if (!updated_meeting) {
-      return res.status(500).json({
-        status: "error",
-        message: "Error reopening meeting.",
+      return res.status(200).json({
+        status: "success",
+        message: "Meeting is not ended.",
       });
     }
 

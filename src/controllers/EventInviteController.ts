@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { isRequestInvalid, isEventExpired } from "../helpers/utils";
+import { isRequestInvalid, isEventExpired, bestEffort } from "../helpers/utils";
 import * as EventInviteService from "../services/EventInviteService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
@@ -48,7 +48,16 @@ export async function invite(req: any, res: Response) {
       });
     }
 
-    await Promise.all(user_id_list.map(async (user_id: string) => {
+    const invite = await EventInviteService.invite(user_id_list, event_id);
+
+    if (!invite) {
+      return res.status(500).json({
+        status: "error",
+        message: "Error inviting event.",
+      });
+    }
+
+    await bestEffort("invitation_sent emails", () => Promise.all(user_id_list.map(async (user_id: string) => {
       const user = await UserService.findById(user_id);
 
       await EmailService.send({
@@ -59,18 +68,9 @@ export async function invite(req: any, res: Response) {
           event_title: event.title,
         }
       });
-    }));
+    })));
 
-    const invite = await EventInviteService.invite(user_id_list, event_id);
-
-    if (!invite) {
-      return res.status(500).json({
-        status: "error",
-        message: "Error inviting event.",
-      });
-    }
-
-    await NotificationService.sendInvitation(user_id_list, event.title);
+    await bestEffort("invitation notifications", () => NotificationService.sendInvitation(user_id_list, event.title));
 
     return res.status(201).json({
       status: "success",
@@ -203,7 +203,16 @@ export async function startMeeting(req: any, res: Response) {
       });
     }
 
-    await Promise.all(user_id_list.map(async (user_id: string) => {
+    const meeting_started = await EventInviteService.startMeeting(user_id_list, event_id);
+
+    if (!meeting_started) {
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to send meeting email.",
+      });
+    }
+
+    await bestEffort("meeting_started emails", () => Promise.all(user_id_list.map(async (user_id: string) => {
       const user = await UserService.findById(user_id);
 
       await EmailService.send({
@@ -214,18 +223,9 @@ export async function startMeeting(req: any, res: Response) {
           event_title: event.title,
         }
       });
-    }));
+    })));
 
-    const meeting_started = await EventInviteService.startMeeting(user_id_list, event_id);
-
-    if (!meeting_started) {
-      return res.status(500).json({
-        status: "error",
-        message: "Failed to send meeting email.",
-      });
-    }
-
-    await NotificationService.sendMeetingStarted(user_id_list, event.title);
+    await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event.title));
 
     return res.status(200).json({
       status: "success",

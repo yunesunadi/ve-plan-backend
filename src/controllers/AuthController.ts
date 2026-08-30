@@ -12,10 +12,6 @@ export async function register(req: Request, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(req.body.password, salt);
-    const filename = req.file?.filename;
-
     const existed_user = await UserService.findByEmail(req.body.email);
 
     if (existed_user) {
@@ -24,19 +20,34 @@ export async function register(req: Request, res: Response) {
         message: "User with this email is already existed.",
       });
     }
-    
+
+    const salt = await bcrypt.genSalt();
+    const hash = await bcrypt.hash(req.body.password, salt);
+    const filename = req.file?.filename;
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    let user = await UserService.create({
-      profile: filename,
-      name: req.body.name,
-      email: req.body.email,
-      password: hash,
-      isVerified: false,
-      verificationToken,
-      verificationTokenExpires
-    });
+    let user;
+
+    try {
+      user = await UserService.create({
+        profile: filename,
+        name: req.body.name,
+        email: req.body.email,
+        password: hash,
+        isVerified: false,
+        verificationToken,
+        verificationTokenExpires
+      });
+    } catch (createErr: any) {
+      if (createErr && createErr.code === 11000) {
+        return res.status(409).json({
+          status: "error",
+          message: "User with this email is already existed.",
+        });
+      }
+      throw createErr;
+    }
 
     await EmailService.send({
       action: "email_verified",
@@ -160,25 +171,16 @@ export async function role(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    let user = await UserService.findById(req.user._id);
+    const set_role = await UserService.setRoleIfUnset(req.user._id, req.body.role);
 
-    if (user.role) {
+    if (!set_role) {
       return res.status(409).json({
         status: "error",
         message: "User role is already set."
       });
     }
-  
-    const set_role = await UserService.setRole(req.user._id, req.body.role);
-    
-    if(!set_role) {
-      return res.status(409).json({
-        status: "error",
-        message: "Cannot set role to user with this ID."
-      });
-    }
 
-    user = await UserService.findById(req.user._id);
+    let user: any = set_role;
     user._id = user._id.toString();
     user = user.toJSON();
     delete user.password;
