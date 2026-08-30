@@ -17,7 +17,8 @@ const MeetingSchema = new Schema({
   },
   token: {
     type: String,
-    require: true,
+    required: false,
+    default: null,
   },
   start_time: {
     type: Date,
@@ -43,9 +44,15 @@ const MeetingSchema = new Schema({
     default: null
   },
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  toJSON: {
+    transform: function (_doc: any, ret: any) {
+      delete ret.token;
+      return ret;
+    }
+  }
 });
 
 module.exports = mongoose.model("Meeting", MeetingSchema);

@@ -2,12 +2,23 @@ import { objectId } from "../helpers/utils";
 
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
-const path = require("path");
+const crypto = require("crypto");
 const MeetingModel = require("../models/Meeting");
 
 const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
 
-export function createToken(name: string, email: string, is_moderator: boolean) {  
+const MEETING_TOKEN_TTL_SECONDS = 2 * 60 * 60;
+
+export function generateRoomName(): string {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+export function createToken(
+  name: string,
+  email: string,
+  is_moderator: boolean,
+  room_name: string
+): string {
   const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 
   if (!privateKeyPath) {
@@ -15,6 +26,7 @@ export function createToken(name: string, email: string, is_moderator: boolean) 
   }
 
   const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+  const now = Math.round(new Date().getTime() / 1000);
 
   const token = jwt.sign({
     aud: "jitsi",
@@ -25,18 +37,18 @@ export function createToken(name: string, email: string, is_moderator: boolean) 
         moderator: is_moderator
       },
       features: {
-        livestreaming: true,
-        recording: true,
-        transcription: true,
-        "outbound-call": true
+        livestreaming: false,
+        recording: false,
+        transcription: false,
+        "outbound-call": false
       }
     },
     iss: "chat",
-    room: "*",
+    room: room_name,
     sub: process.env.JITSI_APP_ID,
-    exp: Math.round(new Date(new Date().getTime() + 24 * 60 * 60 * 1000).getTime() / 1000),
-    nbf: (Math.round((new Date).getTime() / 1000) - 10)
-  }, 
+    exp: now + MEETING_TOKEN_TTL_SECONDS,
+    nbf: now - 10
+  },
   privateKey,
   { algorithm: "RS256", header: { kid: process.env.JITSI_API_KEY } }
   );

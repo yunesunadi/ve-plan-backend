@@ -1,27 +1,97 @@
 import { Response } from "express";
 import { isRequestInvalid } from "../helpers/utils";
-import { jwtDecode } from "jwt-decode";
 import * as MeetingService from "../services/MeetingService";
+import * as EventService from "../services/EventService";
 import * as EventRegisterService from "../services/EventRegisterService";
 import * as EventInviteService from "../services/EventInviteService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 
+async function getParticipation(event_id: string, user_id: string) {
+  const [registered, invited] = await Promise.all([
+    EventRegisterService.getHasRegistered(event_id, user_id),
+    EventInviteService.getHasInvited(event_id, user_id),
+  ]);
+
+  const approved_registrant = Boolean(registered && registered.register_approved);
+  const accepted_invitee = Boolean(invited && invited.invitation_accepted);
+  const notified = Boolean((registered && registered.meeting_started) || (invited && invited.meeting_started));
+
+  return {
+    is_participant: approved_registrant || accepted_invitee,
+    notified,
+  };
+}
+
 export async function createToken(req: any, res: Response) {
-  try { 
-    const meeting_token = await MeetingService.createToken(req.user.name, req.user.email, req.body.is_moderator);
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const event_id = req.body.event_id;
+    const event = await EventService.getOneById(event_id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID.",
+      });
+    }
+
+    const meeting = await MeetingService.getOneByEventId(event_id);
+
+    if (!meeting) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no meeting for this event.",
+      });
+    }
+
+    const is_owner = event.user._id.toString() === req.user._id;
+
+    if (!is_owner) {
+      const { is_participant, notified } = await getParticipation(event_id, req.user._id);
+
+      if (!is_participant) {
+        return res.status(403).json({
+          status: "error",
+          message: "You are not a participant of this event.",
+        });
+      }
+
+      if (meeting.ended) {
+        return res.status(403).json({
+          status: "error",
+          message: "This meeting has ended.",
+        });
+      }
+
+      if (!notified) {
+        return res.status(403).json({
+          status: "error",
+          message: "The host has not started this meeting yet.",
+        });
+      }
+    }
+
+    const meeting_token = MeetingService.createToken(
+      req.user.name,
+      req.user.email,
+      is_owner,
+      meeting.room_name
+    );
 
     if (!meeting_token) {
       return res.status(500).json({
         status: "error",
         message: "Error creating meeting token.",
       });
-    } 
+    }
 
     return res.status(201).json({
       status: "success",
       message: "Create meeting token successfully.",
-      token: meeting_token
+      token: meeting_token,
+      room_name: meeting.room_name,
     });
   } catch (err: any) {
     console.log("err", err);
@@ -37,20 +107,35 @@ export async function create(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
+    const event = await EventService.getOneById(req.body.event);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID.",
+      });
+    }
+
+    if (event.user._id.toString() !== req.user._id) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not the organizer of this event.",
+      });
+    }
+
     const existing = await MeetingService.getOneById(req.body.event, req.user._id);
 
     if (existing) {
-      return res.status(500).json({
+      return res.status(409).json({
         status: "error",
-        message: "Existing meeting.",
+        message: "A meeting already exists for this event.",
       });
     }
-    
+
     const meeting = await MeetingService.create({
       event: req.body.event,
       user: req.user._id,
-      room_name: req.body.room_name,
-      token: req.body.token
+      room_name: MeetingService.generateRoomName(),
     });
 
     if (!meeting) {
@@ -58,7 +143,7 @@ export async function create(req: any, res: Response) {
         status: "error",
         message: "Error creating meeting.",
       });
-    } 
+    }
 
     return res.status(201).json({
       status: "success",
@@ -152,12 +237,44 @@ export async function getOneById(req: any, res: Response) {
 
 export async function getOneByEventId(req: any, res: Response) {
   try {
-    const meeting = await MeetingService.getOneByEventId(req.params.id);
+    if (isRequestInvalid(req, res)) return;
+
+    const event_id = req.params.id;
+    const event = await EventService.getOneById(event_id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID.",
+      });
+    }
+
+    const meeting = await MeetingService.getOneByEventId(event_id);
+
+    if (!meeting) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no meeting for this event.",
+      });
+    }
+
+    const { is_participant, notified } = await getParticipation(event_id, req.user._id);
+
+    if (!is_participant || !notified) {
+      return res.status(403).json({
+        status: "error",
+        message: "You are not a participant of this event.",
+      });
+    }
 
     return res.status(200).json({
       status: "success",
       message: "Fetch meeting successfully.",
-      data: meeting
+      data: {
+        room_name: meeting.room_name,
+        ended: meeting.ended,
+        starts_at: meeting.start_time,
+      }
     });
   } catch (err: any) {
      console.log("err", err);
@@ -171,18 +288,6 @@ export async function getOneByEventId(req: any, res: Response) {
 
 export async function isExpired(req: any, res: Response) {
   try {
-    const meeting = await MeetingService.getOneByEventId(req.params.id);
-    const current_time = Math.round(new Date().getTime() / 1000);
-    const expired_time = (meeting && jwtDecode(meeting.token).exp) || current_time;
-
-    if ((expired_time - current_time) < 0) {
-      return res.status(200).json({
-        status: "success",
-        message: "Meeting is expired.",
-        is_expired: true
-      });
-    }
-
     return res.status(200).json({
       status: "success",
       message: "Meeting isn't expired.",
