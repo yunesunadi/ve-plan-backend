@@ -66,8 +66,7 @@ export async function create(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -99,8 +98,7 @@ export async function update(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -136,8 +134,7 @@ export async function updateNoEndTime(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -155,8 +152,7 @@ export async function getAll(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -216,8 +212,7 @@ export async function getStayTimes(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }

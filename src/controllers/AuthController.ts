@@ -55,8 +55,7 @@ export async function register(req: Request, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -108,8 +107,7 @@ export async function login(req: Request, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -153,8 +151,7 @@ export async function verify(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -200,8 +197,7 @@ export async function role(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -254,8 +250,7 @@ export async function forgotPassword(req: Request, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -308,8 +303,7 @@ export async function resetPassword(req: Request, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -327,8 +321,7 @@ export async function googleCallback(req: any, res: Response) {
   } catch (err) {
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -346,8 +339,7 @@ export async function facebookCallback(req: any, res: Response) {
   } catch (err) {
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -404,8 +396,7 @@ export async function facebookToken(req: Request, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }

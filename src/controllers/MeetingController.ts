@@ -97,8 +97,7 @@ export async function createToken(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -154,8 +153,7 @@ export async function create(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -181,8 +179,7 @@ export async function isCreated(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -210,8 +207,7 @@ export async function isStarted(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -227,8 +223,7 @@ export async function getOneById(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -278,8 +273,7 @@ export async function getOneByEventId(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -295,8 +289,7 @@ export async function isExpired(_req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -324,8 +317,7 @@ export async function updateStartTime(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -382,8 +374,7 @@ export async function endMeeting(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -410,8 +401,7 @@ export async function reopenMeeting(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -448,8 +438,7 @@ export async function updateEndTime(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }

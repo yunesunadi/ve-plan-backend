@@ -46,8 +46,7 @@ export async function register(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -76,8 +75,7 @@ export async function unregister(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -103,8 +101,7 @@ export async function hasRegistered(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -129,8 +126,7 @@ export async function isRegisterApproved(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -148,8 +144,7 @@ export async function getAllByEventId(req: Request, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -167,8 +162,7 @@ export async function getAllApprovedByEventId(req: Request, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -186,8 +180,7 @@ export async function getAllByUserId(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -205,8 +198,7 @@ export async function getAllApprovedByUserId(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -274,8 +266,7 @@ export async function approveRegister(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -334,8 +325,7 @@ export async function startMeeting(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }

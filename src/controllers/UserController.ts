@@ -27,8 +27,7 @@ export async function hasRole(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -56,8 +55,7 @@ export async function getAllById(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -93,8 +91,7 @@ export async function getAttendeesByNameOrEmail(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -128,8 +125,7 @@ export async function update(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -175,8 +171,7 @@ export async function updatePassword(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }

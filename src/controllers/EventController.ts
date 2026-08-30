@@ -1,7 +1,10 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import mongoose from "mongoose";
 import { isRequestInvalid } from "../helpers/utils";
 import * as EventService from "../services/EventService";
 import * as NotificationService from "../services/NotificationService";
+import * as EventRegisterService from "../services/EventRegisterService";
+import * as EventInviteService from "../services/EventInviteService";
 
 export async function create(req: any, res: Response) {
   try {
@@ -51,8 +54,7 @@ export async function create(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -71,8 +73,7 @@ export async function getAll(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -90,8 +91,7 @@ export async function getAllByQuery(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -109,14 +109,20 @@ export async function getMyEvents(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
 
-export async function getOneById(req: Request, res: Response) {
+export async function getOneById(req: any, res: Response) {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID."
+      });
+    }
+
     const event = await EventService.getOneById(req.params.id as string);
 
     if (!event) {
@@ -124,6 +130,25 @@ export async function getOneById(req: Request, res: Response) {
         status: "error",
         message: "There is no event with this ID."
       });
+    }
+
+    if (event.type !== "public") {
+      let has_access = event.user._id.toString() === req.user._id;
+
+      if (!has_access) {
+        const [registered, invited] = await Promise.all([
+          EventRegisterService.getHasRegistered(req.params.id, req.user._id),
+          EventInviteService.getHasInvited(req.params.id, req.user._id),
+        ]);
+        has_access = Boolean(registered || invited);
+      }
+
+      if (!has_access) {
+        return res.status(404).json({
+          status: "error",
+          message: "There is no event with this ID."
+        });
+      }
     }
 
     return res.status(200).json({
@@ -135,8 +160,7 @@ export async function getOneById(req: Request, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -145,17 +169,20 @@ export async function update(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    let updated_data;
+    const updated_data: any = {
+      title: req.body.title,
+      description: req.body.description,
+      date: req.body.date,
+      start_time: req.body.start_time,
+      end_time: req.body.end_time,
+      category: req.body.category,
+      type: req.body.type,
+    };
 
     if (req.file) {
-      updated_data = {
-        ...req.body,
-        cover: req.file.filename
-      };
-    } else {
-      updated_data = req.body;
+      updated_data.cover = req.file.filename;
     }
-    
+
     let event = await EventService.update(req.params.id, updated_data);
 
     if (!event) {
@@ -178,8 +205,7 @@ export async function update(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -196,8 +222,7 @@ export async function deleteOne(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }

@@ -80,8 +80,7 @@ export async function invite(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -99,8 +98,7 @@ export async function getAllByEventId(req: Request, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -118,8 +116,7 @@ export async function getAllAcceptedByEventId(req: Request, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -137,8 +134,7 @@ export async function getAllByUserId(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -156,8 +152,7 @@ export async function getAllAcceptedByUserId(req: any, res: Response) {
      console.log("err", err);
      return res.status(500).json({
        status: "error",
-       message: "Something went wrong.",
-       error: err
+       message: "Something went wrong."
      });
    }
 }
@@ -181,8 +176,7 @@ export async function acceptInvite(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
@@ -241,8 +235,7 @@ export async function startMeeting(req: any, res: Response) {
     console.log("err", err);
     return res.status(500).json({
       status: "error",
-      message: "Something went wrong.",
-      error: err
+      message: "Something went wrong."
     });
   }
 }
