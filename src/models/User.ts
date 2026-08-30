@@ -48,9 +48,19 @@ const UserSchema = new Schema({
     sparse: true
   },
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  toJSON: {
+    transform: function (_doc: any, ret: any) {
+      delete ret.password;
+      delete ret.verificationToken;
+      delete ret.verificationTokenExpires;
+      delete ret.resetPasswordToken;
+      delete ret.resetPasswordExpires;
+      return ret;
+    }
+  }
 });
 
 module.exports = mongoose.model("User", UserSchema);

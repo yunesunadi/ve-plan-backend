@@ -22,6 +22,26 @@ export function objectId(id: string) {
   return _id;
 }
 
+export function escapeRegExp(input: string) {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function maskEmail(email: string) {
+  const at = email.lastIndexOf("@");
+
+  if (at < 1) {
+    return "***";
+  }
+
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  const visible = local.length <= 2
+    ? local.slice(0, 1)
+    : local.slice(0, 1) + "*".repeat(local.length - 2) + local.slice(-1);
+
+  return `${visible}${domain}`;
+}
+
 export function isEventExpired(event_date: Date | string, event_end_time: Date | string) {
   const date = new Date(event_date);
   const time = new Date(event_end_time);

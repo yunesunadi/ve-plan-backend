@@ -1,6 +1,8 @@
-import { objectId } from "../helpers/utils";
+import { objectId, escapeRegExp } from "../helpers/utils";
 
 const UserModel = require("../models/User");
+
+const ATTENDEE_SEARCH_LIMIT = 50;
 
 export function create(reqObj: any) {
   return UserModel.create(reqObj);
@@ -53,16 +55,22 @@ export function getRole(id: string) {
   return UserModel.findById(objectId(id)).select("role");
 }
 
-export function findAttendeesByNameOrEmail(keyword: string) {
+export function findAttendeesByNameOrEmail(keyword: string, page = 1) {
+  const safe = escapeRegExp(keyword);
+  const skip = Math.max(0, (page - 1)) * ATTENDEE_SEARCH_LIMIT;
+
   return UserModel
     .find({
       $or: [
-        { name: { $regex: keyword, $options: 'i' } },
-        { email: { $regex: keyword, $options: 'i' } }
+        { name: { $regex: safe, $options: 'i' } },
+        { email: { $regex: safe, $options: 'i' } }
       ],
       role: "attendee"
     })
-    .select("-password");
+    .select("name profile email")
+    .sort({ name: 1 })
+    .skip(skip)
+    .limit(ATTENDEE_SEARCH_LIMIT);
 }
 
 export function update(id: string, data: any) {

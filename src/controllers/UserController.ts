@@ -1,7 +1,9 @@
 import { Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, maskEmail } from "../helpers/utils";
 import bcrypt from "bcrypt";
 import * as UserService from "../services/UserService";
+
+const MIN_ATTENDEE_SEARCH_LENGTH = 2;
 
 export async function hasRole(req: any, res: Response) {
   try {
@@ -62,19 +64,30 @@ export async function getAllById(req: any, res: Response) {
 
 export async function getAttendeesByNameOrEmail(req: any, res: Response) {
   try {
-    const attendees = await UserService.findAttendeesByNameOrEmail(req.query.search);
+    const raw = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
-    if (attendees.length < 1) {
+    if (raw.length < MIN_ATTENDEE_SEARCH_LENGTH) {
       return res.status(200).json({
         status: "success",
-        message: "Cannot find attendees with this keyword."
+        message: "Enter at least 2 characters to search.",
+        data: []
       });
     }
+
+    const attendees = await UserService.findAttendeesByNameOrEmail(raw, page);
+
+    const data = attendees.map((attendee: any) => ({
+      _id: attendee._id,
+      name: attendee.name,
+      profile: attendee.profile ?? null,
+      email: maskEmail(attendee.email)
+    }));
 
     return res.status(200).json({
       status: "success",
       message: "Fetch attendees successfully.",
-      data: attendees
+      data
     })
   } catch (err: any) {
     console.log("err", err);
