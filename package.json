@@ -7,6 +7,8 @@
     "start": "npx tsc && nodemon dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\"",
     "build": "npx tsc && cp -r src/email_templates dist/email_templates",
+    "migrate": "npm run build && node dist/migrations/cli.js",
+    "migrate:status": "npm run build && node dist/migrations/cli.js status",
     "pm2:start": "npm run build && pm2 start ecosystem.config.js",
     "pm2:restart": "npm run build && pm2 restart ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",

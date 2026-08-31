@@ -55,21 +55,21 @@ export async function unregister(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const register = await EventRegisterService.unregister({
+    const result = await EventRegisterService.unregister({
       event: req.params.id,
       user: req.user._id
     });
 
-    if (!register) {
-      return res.status(500).json({
+    if (!result || result.deletedCount < 1) {
+      return res.status(404).json({
         status: "error",
-        message: "Error unregistering event.",
+        message: "You are not registered for this event.",
       });
-    } 
+    }
 
     return res.status(200).json({
       status: "success",
-      message: "Unegister event successfully.",
+      message: "Unregister event successfully.",
     });
   } catch (err: any) {
     console.log("err", err);

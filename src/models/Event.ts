@@ -39,10 +39,14 @@ const EventSchema = new Schema({
     require: true,
   },
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  autoIndex: process.env.NODE_ENV !== "production"
 });
+
+EventSchema.index({ type: 1, date: 1 });
+EventSchema.index({ user: 1 });
 
 async function cascadeEventDeletes(this: any, next: (err?: any) => void) {
   try {

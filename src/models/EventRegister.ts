@@ -20,9 +20,12 @@ const EventRegisterSchema = new Schema({
     default: false,
   }
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  autoIndex: process.env.NODE_ENV !== "production"
 });
+
+EventRegisterSchema.index({ event: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model("EventRegister", EventRegisterSchema);

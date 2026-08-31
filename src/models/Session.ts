@@ -25,9 +25,12 @@ const SessionSchema = new Schema({
     require: true,
   },
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  autoIndex: process.env.NODE_ENV !== "production"
 });
+
+SessionSchema.index({ event: 1 });
 
 module.exports = mongoose.model("Session", SessionSchema);

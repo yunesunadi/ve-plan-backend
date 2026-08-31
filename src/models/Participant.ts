@@ -30,9 +30,12 @@ const ParticipantSchema = new Schema({
     require: false,
   },
 },
-{ 
+{
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  autoIndex: process.env.NODE_ENV !== "production"
 });
+
+ParticipantSchema.index({ event: 1, user: 1 }, { unique: true });
 
 module.exports = mongoose.model("Participant", ParticipantSchema);

@@ -38,9 +38,15 @@ export async function create(req: any, res: Response) {
     const existing = await ParticipantService.getOne(event_id, req.user._id);
 
     if (existing) {
-      return res.status(409).json({
-        status: "error",
-        message: "Existing participant.",
+      await ParticipantService.update(existing._id, {
+        room_name: meeting.room_name,
+        start_time: new Date(),
+        end_time: null,
+      });
+
+      return res.status(200).json({
+        status: "success",
+        message: "Rejoined meeting successfully.",
       });
     }
 
@@ -76,13 +82,30 @@ export async function update(req: any, res: Response) {
     if(isRequestInvalid(req, res)) return;
 
     const participant = await ParticipantService.getOne(req.params.id, req.user._id);
-    const milisecond = new Date(req.body.end_time).getTime() - new Date(participant.start_time).getTime();
-    const minute = Math.round(milisecond / 60000);
+
+    if (!participant) {
+      return res.status(404).json({
+        status: "error",
+        message: "You have no participant record for this event.",
+      });
+    }
+
+    if (participant.end_time) {
+      return res.status(200).json({
+        status: "success",
+        message: "Update participant successfully.",
+      });
+    }
+
+    const session_minutes = participant.start_time
+      ? Math.max(0, Math.round((new Date(req.body.end_time).getTime() - new Date(participant.start_time).getTime()) / 60000))
+      : 0;
+
     const updated_participant = await ParticipantService.update(participant._id, {
-      ...req.body,
-      duration: minute
+      end_time: req.body.end_time,
+      duration: (participant.duration || 0) + session_minutes,
     });
-    
+
     if (!updated_participant) {
       return res.status(500).json({
         status: "error",

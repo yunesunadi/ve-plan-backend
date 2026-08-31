@@ -42,6 +42,7 @@ const MeetingSchema = new Schema({
 {
   timestamps: true,
   versionKey: false,
+  autoIndex: process.env.NODE_ENV !== "production",
   toJSON: {
     transform: function (_doc: any, ret: any) {
       delete ret.token;
@@ -49,5 +50,7 @@ const MeetingSchema = new Schema({
     }
   }
 });
+
+MeetingSchema.index({ event: 1 }, { unique: true });
 
 module.exports = mongoose.model("Meeting", MeetingSchema);

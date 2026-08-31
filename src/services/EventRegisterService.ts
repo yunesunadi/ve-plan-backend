@@ -6,7 +6,13 @@ const EventRegisterModel = require("../models/EventRegister");
 const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
 
 export function register(reqObj: any) {
-  return EventRegisterModel.create(reqObj);
+  const event = objectId(reqObj.event);
+  const user = objectId(reqObj.user);
+  return EventRegisterModel.findOneAndUpdate(
+    { event, user },
+    { $setOnInsert: { event, user, register_approved: false, meeting_started: false } },
+    { upsert: true, new: true }
+  );
 }
 
 export function unregister(reqObj: any) {

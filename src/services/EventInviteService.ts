@@ -6,9 +6,25 @@ const omitted_user_fields = "-password -verificationToken -verificationTokenExpi
 
 export function invite(user_id_list: string[], event_id: string) {
   const event = objectId(event_id);
-  const user_id_list_object = user_id_list.map((user_id: string) => objectId(user_id));
-  const list = user_id_list_object.map(user => ({ user, event }));
-  return EventInviteModel.insertMany(list);
+  const operations = user_id_list.map((user_id: string) => {
+    const user = objectId(user_id);
+    return {
+      updateOne: {
+        filter: { event, user },
+        update: {
+          $setOnInsert: {
+            event,
+            user,
+            invitation_sent: true,
+            invitation_accepted: false,
+            meeting_started: false,
+          },
+        },
+        upsert: true,
+      },
+    };
+  });
+  return EventInviteModel.bulkWrite(operations);
 }
 
 export function getOneByEventAndUserId(event_id: string, user_id_list: string[]) {
