@@ -59,21 +59,49 @@ export async function bestEffort(label: string, task: () => Promise<unknown>) {
   }
 }
 
-export function isEventExpired(event_date: Date | string, event_end_time: Date | string) {
+export function eventInstant(event_date: Date | string, event_time: Date | string): number {
   const date = new Date(event_date);
-  const time = new Date(event_end_time);
+  const time = new Date(event_time);
 
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    time.getHours(),
+    time.getMinutes(),
+    time.getSeconds(),
+    time.getMilliseconds()
+  ).getTime();
+}
 
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
-  const milliseconds = time.getMilliseconds();
+export function isEventExpired(event_date: Date | string, event_end_time: Date | string) {
+  return eventInstant(event_date, event_end_time) < Date.now();
+}
 
-  const event_datetime = new Date(year, month, day, hours, minutes, seconds, milliseconds).getTime();
-  const current_datetime = new Date().getTime();
+export const JOIN_WINDOW_BEFORE_MIN = 15;
+export const JOIN_WINDOW_AFTER_MIN = 30;
 
-  return event_datetime < current_datetime;
+type EventTiming = {
+  date: Date | string;
+  start_time: Date | string;
+  end_time: Date | string;
+};
+
+export function joinWindow(event: EventTiming) {
+  return {
+    opensAt: eventInstant(event.date, event.start_time) - JOIN_WINDOW_BEFORE_MIN * 60000,
+    closesAt: eventInstant(event.date, event.end_time) + JOIN_WINDOW_AFTER_MIN * 60000,
+  };
+}
+
+export type JoinWindowState = "early" | "open" | "closed";
+
+export function joinWindowState(event: EventTiming, now: number = Date.now()) {
+  const { opensAt, closesAt } = joinWindow(event);
+
+  let state: JoinWindowState = "open";
+  if (now < opensAt) state = "early";
+  else if (now > closesAt) state = "closed";
+
+  return { state, opensAt, closesAt };
 }

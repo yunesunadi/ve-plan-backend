@@ -21,6 +21,8 @@ require("dotenv").config();
 
 import { assertEnv, corsOrigin } from "./libs/env";
 import { assertTemplates } from "./services/EmailService";
+import { bestEffort } from "./helpers/utils";
+import * as ParticipantService from "./services/ParticipantService";
 assertEnv();
 assertTemplates();
 
@@ -84,6 +86,12 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.log("err", err);
   res.status(500).json({ status: "error", message: "Something went wrong." });
 });
+
+const PARTICIPANT_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+const runParticipantSweep = () =>
+  bestEffort("participant-sweep", () => ParticipantService.closeDanglingForEndedMeetings());
+setTimeout(runParticipantSweep, 60 * 1000).unref();
+setInterval(runParticipantSweep, PARTICIPANT_SWEEP_INTERVAL_MS).unref();
 
 server.listen(PORT, () => {
   console.log(`Server is listening at port ${PORT}...`);

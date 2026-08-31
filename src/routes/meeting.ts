@@ -24,12 +24,10 @@ const event_id_param_validation = [
 
 const update_start_validation = [
   param("id", "Invalid event id.").isMongoId(),
-  body("start_time", "Start time is required.").notEmpty(),
 ];
 
 const update_end_validation = [
   param("id", "Invalid event id.").isMongoId(),
-  body("end_time", "End time is required.").notEmpty(),
 ];
 
 router.post("/", create_validation, jwtAuth, organizerAuth, MeetingController.create);

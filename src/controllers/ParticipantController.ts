@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, joinWindowState } from "../helpers/utils";
 import * as ParticipantService from "../services/ParticipantService";
 import * as MeetingService from "../services/MeetingService";
 import * as EventRegisterService from "../services/EventRegisterService";
@@ -35,7 +35,42 @@ export async function create(req: any, res: Response) {
       });
     }
 
+    const join_window = joinWindowState(meeting.event);
+
+    if (join_window.state === "closed") {
+      return res.status(403).json({
+        status: "error",
+        message: "The join window for this event has closed.",
+      });
+    }
+
+    if (join_window.state === "early") {
+      return res.status(403).json({
+        status: "error",
+        message: `This meeting can be joined from ${new Date(join_window.opensAt).toISOString()}.`,
+      });
+    }
+
+    if (!meeting.host_present) {
+      return res.status(409).json({
+        status: "error",
+        message: "The host hasn't started this meeting yet.",
+      });
+    }
+
     const existing = await ParticipantService.getOne(event_id, req.user._id);
+    const already_in = Boolean(existing && !existing.end_time);
+
+    if (!already_in) {
+      const present = await ParticipantService.countPresent(event_id);
+
+      if (present >= (meeting.capacity || 25)) {
+        return res.status(409).json({
+          status: "error",
+          message: "This meeting is full.",
+        });
+      }
+    }
 
     if (existing) {
       await ParticipantService.update(existing._id, {
@@ -97,12 +132,13 @@ export async function update(req: any, res: Response) {
       });
     }
 
+    const now = new Date();
     const session_minutes = participant.start_time
-      ? Math.max(0, Math.round((new Date(req.body.end_time).getTime() - new Date(participant.start_time).getTime()) / 60000))
+      ? Math.max(0, Math.round((now.getTime() - new Date(participant.start_time).getTime()) / 60000))
       : 0;
 
     const updated_participant = await ParticipantService.update(participant._id, {
-      end_time: req.body.end_time,
+      end_time: now,
       duration: (participant.duration || 0) + session_minutes,
     });
 
@@ -140,12 +176,14 @@ export async function updateNoEndTime(req: any, res: Response) {
       });
     }
 
-    await Promise.all(participants.map(async (participant: any) => {
-      const now = new Date();
-      const minute = Math.round((now.getTime() - new Date(participant.start_time).getTime()) / 60000);
-      await ParticipantService.update(participant._id, {
-        end_time: now.toISOString(),
-        duration: minute
+    const now = new Date();
+    await Promise.all(participants.map((participant: any) => {
+      const minute = participant.start_time
+        ? Math.max(0, Math.round((now.getTime() - new Date(participant.start_time).getTime()) / 60000))
+        : 0;
+      return ParticipantService.update(participant._id, {
+        end_time: now,
+        duration: (participant.duration || 0) + minute
       });
     }));
 
@@ -186,50 +224,49 @@ export async function getStayTimes(req: any, res: Response) {
 
     const meeting = await MeetingService.getOneById(req.params.id, req.user._id);
     const participants = await ParticipantService.getAll(req.params.id);
-    
-    const fraction = (meeting && meeting.duration && (Math.round(meeting.duration / 4) + 1)) || 0;
-    const first = `${0} - ${fraction} min`;
-    const second = `${fraction} - ${fraction * 2} min`;
-    const third = `${fraction * 2} - ${fraction * 3} min`;
-    const fourth = `${fraction * 3} - ${fraction * 4} min`;
 
-    let data = [
-      {
-        label: first,
-        value: 0
-      },
-      {
-        label: second,
-        value: 0
-      },
-      {
-        label: third,
-        value: 0
-      },
-      {
-        label: fourth,
-        value: 0
-      },
+    const durations = participants
+      .map((participant: any) => participant.duration)
+      .filter((duration: any) => typeof duration === "number" && duration >= 0);
+
+    if (!meeting || !meeting.ended || durations.length === 0) {
+      return res.status(200).json({
+        status: "success",
+        message: "Stay-time analytics are not available yet.",
+        data: [],
+        meta: {
+          available: false,
+          reason: !meeting || !meeting.ended
+            ? "Analytics will be available after the meeting ends."
+            : "No participant stay times were recorded.",
+        },
+      });
+    }
+
+    const basis = meeting.duration && meeting.duration > 0
+      ? meeting.duration
+      : Math.max(...durations);
+    const step = Math.max(1, Math.round(basis / 4));
+
+    const buckets = [
+      { label: `0 - ${step} min`, lo: 0, hi: step, value: 0 },
+      { label: `${step} - ${step * 2} min`, lo: step, hi: step * 2, value: 0 },
+      { label: `${step * 2} - ${step * 3} min`, lo: step * 2, hi: step * 3, value: 0 },
+      { label: `${step * 3}+ min`, lo: step * 3, hi: Infinity, value: 0 },
     ];
 
-    participants.forEach((participant: any) => {
-      data = data.map((item) => {
-        if (
-          participant.duration >= 0 && participant.duration <= fraction && item.label === first
-          || participant.duration > fraction && participant.duration <= fraction * 2 && item.label === second
-          || participant.duration > fraction * 2 && participant.duration <= fraction * 3 && item.label === third
-          || participant.duration > fraction * 3 && participant.duration <= fraction * 4 && item.label === fourth
-        ) {
-          return { ...item, value: item.value + 1 };
-        }
-        return item;
-      });
+    durations.forEach((duration: number) => {
+      const bucket = buckets.find((b, index) =>
+        index === 0 ? duration <= b.hi : duration > b.lo && duration <= b.hi
+      );
+      if (bucket) bucket.value += 1;
     });
 
     return res.status(200).json({
       status: "success",
       message: "Fetch stay times successfully.",
-      data
+      data: buckets.map(({ label, value }) => ({ label, value })),
+      meta: { available: true },
     });
   } catch (err: any) {
     console.log("err", err);

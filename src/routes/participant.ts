@@ -13,13 +13,9 @@ const create_validation = [
     .isMongoId().withMessage("Invalid event id."),
 ];
 
-const update_validation = [
-  body("end_time", "End time is required.").notEmpty(),
-];
-
 router.post("/", create_validation, jwtAuth, attendeeAuth, ParticipantController.create);
 router.put("/:id/no_end_time", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.updateNoEndTime);
-router.put("/:id", objectIdParam("id", "event"), update_validation, jwtAuth, attendeeAuth, ParticipantController.update);
+router.put("/:id", objectIdParam("id", "event"), jwtAuth, attendeeAuth, ParticipantController.update);
 router.get("/:id", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.getAll);
 router.get("/:id/stay_times", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.getStayTimes);
 

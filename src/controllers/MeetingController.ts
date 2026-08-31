@@ -1,11 +1,16 @@
 import { Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, bestEffort, joinWindowState } from "../helpers/utils";
 import * as MeetingService from "../services/MeetingService";
 import * as EventService from "../services/EventService";
 import * as EventRegisterService from "../services/EventRegisterService";
 import * as EventInviteService from "../services/EventInviteService";
+import * as ParticipantService from "../services/ParticipantService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
+
+function formatWindowTime(ms: number): string {
+  return new Date(ms).toISOString();
+}
 
 async function getParticipation(event_id: string, user_id: string) {
   const [registered, invited] = await Promise.all([
@@ -47,6 +52,28 @@ export async function createToken(req: any, res: Response) {
     }
 
     const is_owner = event.user._id.toString() === req.user._id;
+    const join_window = joinWindowState(event);
+
+    if (meeting.ended) {
+      return res.status(403).json({
+        status: "error",
+        message: "This meeting has ended.",
+      });
+    }
+
+    if (join_window.state === "closed") {
+      return res.status(403).json({
+        status: "error",
+        message: "The join window for this event has closed.",
+      });
+    }
+
+    if (join_window.state === "early") {
+      return res.status(403).json({
+        status: "error",
+        message: `This meeting can be joined from ${formatWindowTime(join_window.opensAt)}.`,
+      });
+    }
 
     if (!is_owner) {
       const { is_participant, notified } = await getParticipation(event_id, req.user._id);
@@ -58,17 +85,30 @@ export async function createToken(req: any, res: Response) {
         });
       }
 
-      if (meeting.ended) {
-        return res.status(403).json({
-          status: "error",
-          message: "This meeting has ended.",
-        });
-      }
-
       if (!notified) {
         return res.status(403).json({
           status: "error",
           message: "The host has not started this meeting yet.",
+        });
+      }
+
+      if (!meeting.host_present) {
+        return res.status(409).json({
+          status: "error",
+          message: "The host hasn't started this meeting yet.",
+        });
+      }
+
+      const [present, existing_participant] = await Promise.all([
+        ParticipantService.countPresent(event_id),
+        ParticipantService.getOne(event_id, req.user._id),
+      ]);
+      const already_in = Boolean(existing_participant && !existing_participant.end_time);
+
+      if (!already_in && present >= (meeting.capacity || 25)) {
+        return res.status(409).json({
+          status: "error",
+          message: "This meeting is full.",
         });
       }
     }
@@ -119,6 +159,13 @@ export async function create(req: any, res: Response) {
       return res.status(403).json({
         status: "error",
         message: "You are not the organizer of this event.",
+      });
+    }
+
+    if (joinWindowState(event).state === "closed") {
+      return res.status(409).json({
+        status: "error",
+        message: "This event has ended, so a meeting can no longer be created.",
       });
     }
 
@@ -278,12 +325,50 @@ export async function getOneByEventId(req: any, res: Response) {
    }
 }
 
-export async function isExpired(_req: any, res: Response) {
+export async function isExpired(req: any, res: Response) {
   try {
+    if (isRequestInvalid(req, res)) return;
+
+    const event_id = req.params.id;
+    const event = await EventService.getOneById(event_id);
+
+    if (!event) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID.",
+      });
+    }
+
+    const meeting = await MeetingService.getOneByEventId(event_id);
+    const is_owner = event.user._id.toString() === req.user._id;
+
+    if (!is_owner) {
+      const { is_participant } = await getParticipation(event_id, req.user._id);
+
+      if (!is_participant) {
+        return res.status(403).json({
+          status: "error",
+          message: "You are not a participant of this event.",
+        });
+      }
+    }
+
+    if (!meeting) {
+      return res.status(200).json({
+        status: "success",
+        message: "There is no meeting for this event.",
+        exists: false,
+        is_expired: false,
+      });
+    }
+
+    const is_expired = meeting.ended || joinWindowState(event).state === "closed";
+
     return res.status(200).json({
       status: "success",
-      message: "Meeting isn't expired.",
-      is_expired: false
+      message: is_expired ? "Meeting is expired." : "Meeting isn't expired.",
+      exists: true,
+      is_expired,
     });
   } catch (err: any) {
     console.log("err", err);
@@ -298,9 +383,14 @@ export async function updateStartTime(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const updated_meeting = await MeetingService.update(req.meeting._id, {
-      start_time: req.body.start_time
-    });
+    const meeting = req.meeting;
+    const now = new Date();
+
+    const patch: any = { host_present: true };
+    if (!meeting.start_time) patch.start_time = now;
+    if (!meeting.started_at) patch.started_at = now;
+
+    const updated_meeting = await MeetingService.update(meeting._id, patch);
 
     if (!updated_meeting) {
       return res.status(500).json({
@@ -351,6 +441,7 @@ async function notifyMeetingAttendees(event_id: string, event_title: string, act
 export async function endMeeting(req: any, res: Response) {
   try {
     const meeting = req.meeting;
+    const now = new Date();
     const updated_meeting = await MeetingService.setEnded(meeting._id, true);
 
     if (!updated_meeting) {
@@ -360,6 +451,15 @@ export async function endMeeting(req: any, res: Response) {
       });
     }
 
+    let duration: number | null = null;
+    if (meeting.start_time) {
+      duration = Math.max(0, Math.round((now.getTime() - new Date(meeting.start_time).getTime()) / 60000));
+    }
+
+    await MeetingService.update(meeting._id, { end_time: now, duration, host_present: false });
+    await bestEffort("close-dangling-participants", () =>
+      ParticipantService.closeDanglingForEvent(meeting.event._id, now)
+    );
     await notifyMeetingAttendees(req.params.id, meeting.event.title, "meeting_ended");
 
     return res.status(200).json({
@@ -407,15 +507,15 @@ export async function updateEndTime(req: any, res: Response) {
     if (isRequestInvalid(req, res)) return;
 
     const meeting = req.meeting;
+    const now = new Date();
     let duration: number | null = null;
 
     if (meeting.start_time) {
-      const milisecond = new Date(req.body.end_time).getTime() - new Date(meeting.start_time).getTime();
-      duration = Math.round(milisecond / 60000);
+      duration = Math.max(0, Math.round((now.getTime() - new Date(meeting.start_time).getTime()) / 60000));
     }
 
     const updated_meeting = await MeetingService.update(meeting._id, {
-      end_time: req.body.end_time,
+      end_time: now,
       duration
     });
 

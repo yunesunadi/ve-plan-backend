@@ -38,6 +38,19 @@ const MeetingSchema = new Schema({
     required: false,
     default: null
   },
+  host_present: {
+    type: Boolean,
+    default: false
+  },
+  started_at: {
+    type: Date,
+    required: false,
+    default: null
+  },
+  capacity: {
+    type: Number,
+    default: 25
+  },
 },
 {
   timestamps: true,
