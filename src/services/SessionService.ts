@@ -8,7 +8,7 @@ export function create(reqObj: any) {
 
 export function getAll(id: string) {
   const event = objectId(id);
-  return SessionModel.find({ event });
+  return SessionModel.find({ event }).sort({ start_time: 1, _id: 1 });
 }
 
 export function getOneById(id: string) {

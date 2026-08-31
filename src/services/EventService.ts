@@ -1,4 +1,6 @@
 import { objectId, escapeRegExp } from "../helpers/utils";
+import * as EventRegisterService from "./EventRegisterService";
+import * as EventInviteService from "./EventInviteService";
 
 const EventModel = require("../models/Event");
 
@@ -115,6 +117,18 @@ export function getMyEvents(query: any, user_id: string) {
 
 export function getOneById(id: string) {
   return EventModel.findById(objectId(id)).populate("user", omitted_user_fields);
+}
+
+export async function canUserView(event: any, user_id: string): Promise<boolean> {
+  if (!event) return false;
+  if (event.type === "public") return true;
+  if (event.user._id.toString() === user_id) return true;
+
+  const [registered, invited] = await Promise.all([
+    EventRegisterService.getHasRegistered(event._id.toString(), user_id),
+    EventInviteService.getHasInvited(event._id.toString(), user_id),
+  ]);
+  return Boolean(registered || invited);
 }
 
 export function update(id: string, event: any) {

@@ -28,10 +28,12 @@ const EventSchema = new Schema({
   category: {
     type: String,
     required: true,
+    enum: ["conference", "meetup", "webinar"],
   },
   type: {
     type: String,
     required: true,
+    enum: ["public", "private"],
   },
   user: {
     type: Schema.Types.ObjectId,

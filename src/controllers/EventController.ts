@@ -1,11 +1,11 @@
 import { Response } from "express";
 import mongoose from "mongoose";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, isEventExpired } from "../helpers/utils";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
+import { endNotAfterStart } from "../helpers/time";
 import * as EventService from "../services/EventService";
+import * as MeetingService from "../services/MeetingService";
 import * as NotificationService from "../services/NotificationService";
-import * as EventRegisterService from "../services/EventRegisterService";
-import * as EventInviteService from "../services/EventInviteService";
 
 export async function create(req: any, res: Response) {
   try {
@@ -18,18 +18,25 @@ export async function create(req: any, res: Response) {
       });
     }
 
+    if (endNotAfterStart(req.body.start_time, req.body.end_time)) {
+      return res.status(400).json({
+        status: "error",
+        message: "End time must be after start time."
+      });
+    }
+
     const filename = req.file?.filename;
     const created_date = new Date(req.body.date).getTime();
     const current_date = new Date().getTime();
     const one_day = 24 * 60 * 60 * 1000;
-    
+
     if (created_date < (current_date - one_day)) {
       return res.status(409).json({
         status: "error",
         message: "Can't create an event in past days."
       });
     }
-    
+
     let event = await EventService.create({
       cover: filename,
       title: req.body.title,
@@ -140,23 +147,11 @@ export async function getOneById(req: any, res: Response) {
       });
     }
 
-    if (event.type !== "public") {
-      let has_access = event.user._id.toString() === req.user._id;
-
-      if (!has_access) {
-        const [registered, invited] = await Promise.all([
-          EventRegisterService.getHasRegistered(req.params.id, req.user._id),
-          EventInviteService.getHasInvited(req.params.id, req.user._id),
-        ]);
-        has_access = Boolean(registered || invited);
-      }
-
-      if (!has_access) {
-        return res.status(404).json({
-          status: "error",
-          message: "There is no event with this ID."
-        });
-      }
+    if (!await EventService.canUserView(event, req.user._id)) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID."
+      });
     }
 
     return res.status(200).json({
@@ -182,6 +177,23 @@ export async function update(req: any, res: Response) {
         status: "error",
         message: "The cover must be a valid JPEG, PNG, or WebP image.",
       });
+    }
+
+    if (endNotAfterStart(req.body.start_time, req.body.end_time)) {
+      return res.status(400).json({
+        status: "error",
+        message: "End time must be after start time."
+      });
+    }
+
+    if (isEventExpired(req.body.date, req.body.end_time)) {
+      const meeting = await MeetingService.getOneByEventId(req.params.id);
+      if (meeting && !meeting.ended) {
+        return res.status(409).json({
+          status: "error",
+          message: "End the meeting before moving this event's end time into the past."
+        });
+      }
     }
 
     const updated_data: any = {
