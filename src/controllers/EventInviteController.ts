@@ -28,7 +28,7 @@ export async function invite(req: any, res: Response) {
       });
     }
 
-    if (isEventExpired(event.date, event.end_time)) {
+    if (isEventExpired(event)) {
       return res.status(400).json({
         status: "error",
         message: "This event has already ended and can no longer be invited to.",

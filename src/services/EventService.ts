@@ -1,15 +1,31 @@
+import { DateTime } from "luxon";
 import { objectId, escapeRegExp } from "../helpers/utils";
+import { deriveInstants, resolveTimezone, DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 import * as EventRegisterService from "./EventRegisterService";
 import * as EventInviteService from "./EventInviteService";
 
 const EventModel = require("../models/Event");
+
+function withDerivedInstants(data: any) {
+  if (data?.date && data?.start_time && data?.end_time) {
+    const timezone = resolveTimezone(data.timezone);
+    const { starts_at, ends_at } = deriveInstants({
+      date: data.date,
+      start_time: data.start_time,
+      end_time: data.end_time,
+      timezone,
+    });
+    return { ...data, timezone, starts_at, ends_at };
+  }
+  return data;
+}
 
 const SEARCH_MAX_LENGTH = 100;
 
 const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
 
 export function create(reqObj: any) {
-  return EventModel.create(reqObj);
+  return EventModel.create(withDerivedInstants(reqObj));
 }
 
 export function getAll(role: string) {
@@ -34,9 +50,7 @@ const getQuery = (...query: any) => {
 
 export function getAllByQuery(query: any) {
   let time_query = {}, category_query = {}, search_query = {}, date_query = {};
-  const currentDate = new Date();
-  const startOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-  const endOfDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+  const now = new Date();
   let filter: any = { type: "public" };
 
   if (Object.entries(query).length > 0) {
@@ -48,13 +62,13 @@ export function getAllByQuery(query: any) {
     if (query.time) {
       switch (query.time) {
         case "upcoming":
-          time_query = { date: { $gt: currentDate } };
+          time_query = { starts_at: { $gt: now } };
         break;
         case "happening":
-          time_query = { date: { $gte: startOfDay, $lt: endOfDay } };
+          time_query = { starts_at: { $lte: now }, ends_at: { $gte: now } };
         break;
         case "past":
-          time_query = { date: { $lt: currentDate } };
+          time_query = { ends_at: { $lt: now } };
         break;
       }
     }
@@ -64,7 +78,11 @@ export function getAllByQuery(query: any) {
     }
 
     if (query.date) {
-      date_query = { date: query.date };
+      const anchor = DateTime.fromISO(String(query.date), { zone: DEFAULT_EVENT_TZ });
+      if (anchor.isValid) {
+        const dayStart = anchor.startOf("day");
+        date_query = { starts_at: { $gte: dayStart.toJSDate(), $lt: dayStart.plus({ days: 1 }).toJSDate() } };
+      }
     }
 
     filter = getQuery(search_query, time_query, category_query, date_query);
@@ -132,7 +150,7 @@ export async function canUserView(event: any, user_id: string): Promise<boolean>
 }
 
 export function update(id: string, event: any) {
-  return EventModel.findByIdAndUpdate(objectId(id), event, { new: true });
+  return EventModel.findByIdAndUpdate(objectId(id), withDerivedInstants(event), { new: true });
 }
 
 export async function getParticipantUserIds(event_id: string): Promise<string[]> {

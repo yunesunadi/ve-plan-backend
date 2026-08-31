@@ -20,6 +20,9 @@ const create_validation = [
     .isISO8601().withMessage("Start time must be a valid time."),
   body("end_time", "End time is required.").notEmpty().bail()
     .isISO8601().withMessage("End time must be a valid time."),
+  body("timezone").optional({ values: "falsy" }).isString()
+    .withMessage("Timezone must be a string.").bail()
+    .isLength({ max: 64 }).withMessage("Timezone is too long."),
   body("category", "Category is required.").isIn(["conference", "meetup", "webinar"])
     .withMessage("Category must be conference, meetup, or webinar."),
   body("type", "Type is required.").isIn(["public", "private"])

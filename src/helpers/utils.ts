@@ -74,23 +74,35 @@ export function eventInstant(event_date: Date | string, event_time: Date | strin
   ).getTime();
 }
 
-export function isEventExpired(event_date: Date | string, event_end_time: Date | string) {
-  return eventInstant(event_date, event_end_time) < Date.now();
-}
-
 export const JOIN_WINDOW_BEFORE_MIN = 15;
 export const JOIN_WINDOW_AFTER_MIN = 30;
 
 type EventTiming = {
-  date: Date | string;
-  start_time: Date | string;
-  end_time: Date | string;
+  starts_at?: Date | string | null;
+  ends_at?: Date | string | null;
+  date?: Date | string;
+  start_time?: Date | string;
+  end_time?: Date | string;
 };
+
+function resolvedStart(event: EventTiming): number {
+  if (event.starts_at) return new Date(event.starts_at).getTime();
+  return eventInstant(event.date as Date, event.start_time as Date);
+}
+
+function resolvedEnd(event: EventTiming): number {
+  if (event.ends_at) return new Date(event.ends_at).getTime();
+  return eventInstant(event.date as Date, event.end_time as Date);
+}
+
+export function isEventExpired(event: EventTiming) {
+  return resolvedEnd(event) < Date.now();
+}
 
 export function joinWindow(event: EventTiming) {
   return {
-    opensAt: eventInstant(event.date, event.start_time) - JOIN_WINDOW_BEFORE_MIN * 60000,
-    closesAt: eventInstant(event.date, event.end_time) + JOIN_WINDOW_AFTER_MIN * 60000,
+    opensAt: resolvedStart(event) - JOIN_WINDOW_BEFORE_MIN * 60000,
+    closesAt: resolvedEnd(event) + JOIN_WINDOW_AFTER_MIN * 60000,
   };
 }
 

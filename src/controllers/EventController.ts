@@ -1,8 +1,9 @@
 import { Response } from "express";
 import mongoose from "mongoose";
-import { isRequestInvalid, isEventExpired, bestEffort } from "../helpers/utils";
+import { isRequestInvalid, bestEffort } from "../helpers/utils";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { endNotAfterStart } from "../helpers/time";
+import { deriveInstants, resolveTimezone } from "../helpers/eventTime";
 import * as EventService from "../services/EventService";
 import * as MeetingService from "../services/MeetingService";
 import * as NotificationService from "../services/NotificationService";
@@ -36,14 +37,18 @@ export async function create(req: any, res: Response) {
     }
 
     const filename = req.file?.filename;
-    const created_date = new Date(req.body.date).getTime();
-    const current_date = new Date().getTime();
-    const one_day = 24 * 60 * 60 * 1000;
+    const timezone = resolveTimezone(req.body.timezone);
+    const { ends_at } = deriveInstants({
+      date: req.body.date,
+      start_time: req.body.start_time,
+      end_time: req.body.end_time,
+      timezone,
+    });
 
-    if (created_date < (current_date - one_day)) {
+    if (ends_at.getTime() < Date.now()) {
       return res.status(409).json({
         status: "error",
-        message: "Can't create an event in past days."
+        message: "Can't create an event that has already ended."
       });
     }
 
@@ -54,6 +59,7 @@ export async function create(req: any, res: Response) {
       date: req.body.date,
       start_time: req.body.start_time,
       end_time: req.body.end_time,
+      timezone: req.body.timezone,
       category: req.body.category,
       type: req.body.type,
       user: req.user._id
@@ -196,7 +202,15 @@ export async function update(req: any, res: Response) {
       });
     }
 
-    if (isEventExpired(req.body.date, req.body.end_time)) {
+    const timezone = resolveTimezone(req.body.timezone);
+    const { ends_at } = deriveInstants({
+      date: req.body.date,
+      start_time: req.body.start_time,
+      end_time: req.body.end_time,
+      timezone,
+    });
+
+    if (ends_at.getTime() < Date.now()) {
       const meeting = await MeetingService.getOneByEventId(req.params.id);
       if (meeting && !meeting.ended) {
         return res.status(409).json({
@@ -212,6 +226,7 @@ export async function update(req: any, res: Response) {
       date: req.body.date,
       start_time: req.body.start_time,
       end_time: req.body.end_time,
+      timezone: req.body.timezone,
       category: req.body.category,
       type: req.body.type,
     };

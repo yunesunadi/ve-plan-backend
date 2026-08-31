@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 
 const EventSchema = new Schema({
   cover: {
@@ -24,6 +25,17 @@ const EventSchema = new Schema({
   end_time: {
     type: Date,
     required: true,
+  },
+  timezone: {
+    type: String,
+    required: true,
+    default: DEFAULT_EVENT_TZ,
+  },
+  starts_at: {
+    type: Date,
+  },
+  ends_at: {
+    type: Date,
   },
   category: {
     type: String,
@@ -51,8 +63,9 @@ const EventSchema = new Schema({
   autoIndex: process.env.NODE_ENV !== "production"
 });
 
-EventSchema.index({ type: 1, date: 1 });
 EventSchema.index({ user: 1 });
+EventSchema.index({ starts_at: 1, _id: 1 });
+EventSchema.index({ type: 1, starts_at: 1 });
 
 async function cascadeEventDeletes(this: any, next: (err?: any) => void) {
   try {

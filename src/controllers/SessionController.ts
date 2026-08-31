@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { isRequestInvalid } from "../helpers/utils";
-import { endNotAfterStart, outsideWindow } from "../helpers/time";
+import { endNotAfterStart } from "../helpers/time";
+import { deriveInstants } from "../helpers/eventTime";
 import * as SessionService from "../services/SessionService";
 import * as EventService from "../services/EventService";
 
@@ -9,7 +10,19 @@ function sessionTimeError(event: any, start: string, end: string): string | null
   if (endNotAfterStart(start, end)) {
     return "Session end time must be after its start time.";
   }
-  if (outsideWindow(start, end, event.start_time, event.end_time)) {
+
+  // Compose the session's times onto the event's calendar day, in the event's
+  // timezone, and compare the resulting instants against the event's own
+  // derived window (H-EVT-04). Sessions carry no date or timezone of their own.
+  const timezone = event.timezone;
+  const session = deriveInstants({ date: event.date, start_time: start, end_time: end, timezone });
+  const fallback = deriveInstants({
+    date: event.date, start_time: event.start_time, end_time: event.end_time, timezone,
+  });
+  const eventStart = event.starts_at ? new Date(event.starts_at).getTime() : fallback.starts_at.getTime();
+  const eventEnd = event.ends_at ? new Date(event.ends_at).getTime() : fallback.ends_at.getTime();
+
+  if (session.starts_at.getTime() < eventStart || session.ends_at.getTime() > eventEnd) {
     return "Session must fall within the event's start and end time.";
   }
   return null;
