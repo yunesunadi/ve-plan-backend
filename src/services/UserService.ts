@@ -77,14 +77,10 @@ export function findAttendeesByNameOrEmail(keyword: string, page = 1) {
     .limit(ATTENDEE_SEARCH_LIMIT);
 }
 
-export function update(id: string, data: any) {
-  return UserModel.findOneAndUpdate(
-    { _id: objectId(id) },
-    {
-      profile: data.profile,
-      name: data.name
-    }
-  );
+export function update(id: string, data: { name: string; profile?: string }) {
+  const patch: Record<string, unknown> = { name: data.name };
+  if (data.profile !== undefined) patch.profile = data.profile;
+  return UserModel.findOneAndUpdate({ _id: objectId(id) }, patch);
 }
 
 export function updatePassword(id: string, password: string) {

@@ -1,5 +1,6 @@
 import express from "express";
 import { body, param } from "express-validator";
+import { handleValidation } from "../helpers/validate";
 const router = express.Router();
 const MeetingController = require("../controllers/MeetingController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -33,9 +34,9 @@ const update_end_validation = [
 
 router.post("/", create_validation, jwtAuth, organizerAuth, MeetingController.create);
 router.post("/token", token_validation, jwtAuth, MeetingController.createToken);
-router.get("/:id/is_created", jwtAuth, organizerAuth, MeetingController.isCreated);
-router.get("/:id/is_started", jwtAuth, attendeeAuth, MeetingController.isStarted);
-router.get("/:id/is_expired", jwtAuth, MeetingController.isExpired);
+router.get("/:id/is_created", event_id_param_validation, handleValidation, jwtAuth, organizerAuth, MeetingController.isCreated);
+router.get("/:id/is_started", event_id_param_validation, handleValidation, jwtAuth, attendeeAuth, MeetingController.isStarted);
+router.get("/:id/is_expired", event_id_param_validation, handleValidation, jwtAuth, MeetingController.isExpired);
 router.get("/:id/attendee", event_id_param_validation, jwtAuth, attendeeAuth, MeetingController.getOneByEventId);
 router.get("/:id", event_id_param_validation, jwtAuth, organizerAuth, meetingOwnerAuth, MeetingController.getOneById);
 router.put("/:id/start_time", update_start_validation, jwtAuth, organizerAuth, meetingOwnerAuth, MeetingController.updateStartTime);

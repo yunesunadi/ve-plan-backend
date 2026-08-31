@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { isRequestInvalid, maskEmail } from "../helpers/utils";
+import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import bcrypt from "bcrypt";
 import * as UserService from "../services/UserService";
 
@@ -100,21 +101,29 @@ export async function update(req: any, res: Response) {
   try {    
     if(isRequestInvalid(req, res)) return;
 
+    if (!verifyImageFile(req.file)) {
+      return res.status(415).json({
+        status: "error",
+        message: "The profile photo must be a valid JPEG, PNG, or WebP image.",
+      });
+    }
+
     const filename = req.file?.filename;
 
-    const updated = await UserService.update(
-      req.user._id,
-      {
-        profile: filename,
-        name: req.body.name,
-      }
-    );
+    const data: { name: string; profile?: string } = { name: req.body.name };
+    if (filename) data.profile = filename;
+
+    const updated = await UserService.update(req.user._id, data);
 
     if (!updated) {
       return res.status(500).json({
         status: "error",
         message: "Cannot update user."
       });
+    }
+
+    if (filename && updated.profile && updated.profile !== filename) {
+      removeUpload(updated.profile, "profiles");
     }
 
     return res.status(200).json({

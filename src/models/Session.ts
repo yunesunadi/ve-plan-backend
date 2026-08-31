@@ -13,16 +13,16 @@ const SessionSchema = new Schema({
   },
   start_time: {
     type: Date,
-    require: true,
+    required: true,
   },
   end_time: {
     type: Date,
-    require: true,
+    required: true,
   },
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
-    require: true,
+    required: true,
   },
 },
 {

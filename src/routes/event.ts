@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import multer from "multer";
+import { imageUpload } from "../helpers/uploads";
 const router = express.Router();
 const EventController = require("../controllers/EventController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -17,7 +17,7 @@ const create_validation = [
   body("type", "Type is required.").notEmpty(),
 ];
 
-const cover_upload = multer({ dest: "dist/photos/covers/"});
+const cover_upload = imageUpload("covers");
 
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.create);
 router.get("/events_by_query", jwtAuth, EventController.getAllByQuery);

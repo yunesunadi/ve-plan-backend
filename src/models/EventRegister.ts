@@ -4,12 +4,12 @@ const EventRegisterSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
-    require: true,
+    required: true,
   },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    require: true,
+    required: true,
   },
   register_approved: {
     type: Boolean,

@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import multer from "multer";
+import { imageUpload } from "../helpers/uploads";
 const router = express.Router();
 const UserController = require("../controllers/UserController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -17,7 +17,7 @@ const update_password_validation = [
   body("new_password", "New password must be at least 6 characters.").isLength({ min: 6 }),
 ];
 
-const profile_upload = multer({ dest: "dist/photos/profiles/"});
+const profile_upload = imageUpload("profiles");
 
 router.get("/has_role", jwtAuth, UserController.hasRole);
 router.get("/", jwtAuth, UserController.getAllById);

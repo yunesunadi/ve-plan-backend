@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { isRequestInvalid } from "../helpers/utils";
+import { isRequestInvalid, bestEffort } from "../helpers/utils";
+import { verifyImageFile } from "../helpers/uploads";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -18,6 +19,13 @@ export async function register(req: Request, res: Response) {
       return res.status(409).json({
         status: "error",
         message: "User with this email is already existed.",
+      });
+    }
+
+    if (!verifyImageFile(req.file)) {
+      return res.status(415).json({
+        status: "error",
+        message: "The uploaded file is not a valid JPEG, PNG, or WebP image.",
       });
     }
 
@@ -84,6 +92,14 @@ export async function login(req: Request, res: Response) {
       return res.status(404).json({
         status: "error",
         message: "User with this email is not found."
+      });
+    }
+
+    if (!user.password) {
+      await bcrypt.compare(password, "$2b$12$0000000000000000000000000000000000000000000000000000a");
+      return res.status(400).json({
+        status: "error",
+        message: "This account uses social login. Sign in with Google or Facebook."
       });
     }
 
@@ -188,7 +204,7 @@ export async function role(req: any, res: Response) {
 
     const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
 
-    await NotificationService.sendRegistrationWelcome(user);
+    await bestEffort("registration welcome notification", () => NotificationService.sendRegistrationWelcome(user));
 
     return res.status(200).json({
       status: "success",

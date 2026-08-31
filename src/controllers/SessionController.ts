@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { isRequestInvalid } from "../helpers/utils";
 import * as SessionService from "../services/SessionService";
 import * as EventService from "../services/EventService";
@@ -55,14 +56,16 @@ export async function create(req: any, res: Response) {
 
 export async function getAll(req: any, res: Response) {
   try {
-    const sessions = await SessionService.getAll(req.headers["event-id"]);
+    const event_id = String(req.headers["event-id"] ?? "");
 
-    if (sessions.length < 1) {
-      return res.status(200).json({
+    if (!mongoose.isValidObjectId(event_id)) {
+      return res.status(400).json({
         status: "error",
-        message: "There is no session found."
+        message: "A valid event-id header is required."
       });
     }
+
+    const sessions = await SessionService.getAll(event_id);
 
     return res.status(200).json({
       status: "success",

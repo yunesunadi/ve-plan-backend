@@ -1,6 +1,7 @@
 import { Response } from "express";
 import mongoose from "mongoose";
 import { isRequestInvalid } from "../helpers/utils";
+import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import * as EventService from "../services/EventService";
 import * as NotificationService from "../services/NotificationService";
 import * as EventRegisterService from "../services/EventRegisterService";
@@ -9,6 +10,13 @@ import * as EventInviteService from "../services/EventInviteService";
 export async function create(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
+
+    if (!verifyImageFile(req.file)) {
+      return res.status(415).json({
+        status: "error",
+        message: "The cover must be a valid JPEG, PNG, or WebP image.",
+      });
+    }
 
     const filename = req.file?.filename;
     const created_date = new Date(req.body.date).getTime();
@@ -169,6 +177,13 @@ export async function update(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
+    if (!verifyImageFile(req.file)) {
+      return res.status(415).json({
+        status: "error",
+        message: "The cover must be a valid JPEG, PNG, or WebP image.",
+      });
+    }
+
     const updated_data: any = {
       title: req.body.title,
       description: req.body.description,
@@ -184,6 +199,10 @@ export async function update(req: any, res: Response) {
     }
 
     let event = await EventService.update(req.params.id, updated_data);
+
+    if (event && req.file && req.event?.cover && req.event.cover !== req.file.filename) {
+      removeUpload(req.event.cover, "covers");
+    }
 
     if (!event) {
       return res.status(500).json({
@@ -212,7 +231,16 @@ export async function update(req: any, res: Response) {
 
 export async function deleteOne(req: any, res: Response) {
   try {
-    await EventService.deleteOne(req.params.id as string);
+    const deleted = await EventService.deleteOne(req.params.id as string);
+
+    if (!deleted) {
+      return res.status(404).json({
+        status: "error",
+        message: "There is no event with this ID."
+      });
+    }
+
+    removeUpload(deleted.cover ?? req.event?.cover, "covers");
 
     return res.status(200).json({
       status: "success",

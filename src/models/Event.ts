@@ -19,24 +19,24 @@ const EventSchema = new Schema({
   },
   start_time: {
     type: Date,
-    require: true,
+    required: true,
   },
   end_time: {
     type: Date,
-    require: true,
+    required: true,
   },
   category: {
     type: String,
-    requrie: true,
+    required: true,
   },
   type: {
     type: String,
-    require: true,
+    required: true,
   },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    require: true,
+    required: true,
   },
 },
 {

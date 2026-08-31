@@ -1,5 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
+import { objectIdParam, handleValidation } from "../helpers/validate";
 const router = express.Router();
 const SessionController = require("../controllers/SessionController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -22,7 +23,7 @@ const update_validation = [
 
 router.post("/", create_validation, jwtAuth, organizerAuth, SessionController.create);
 router.get("/", jwtAuth, SessionController.getAll);
-router.get("/:id", jwtAuth, SessionController.getOneById);
+router.get("/:id", objectIdParam("id", "session"), handleValidation, jwtAuth, SessionController.getOneById);
 router.put("/:id", update_validation, jwtAuth, organizerAuth, sessionOwnerAuth, SessionController.update);
 router.delete("/:id", jwtAuth, organizerAuth, sessionOwnerAuth, SessionController.deleteOne);
 

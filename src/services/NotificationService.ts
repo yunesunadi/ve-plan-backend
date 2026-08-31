@@ -19,7 +19,7 @@ export const createNotification = async (notificationData: CreateNotificationDat
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
+    return null;
   }
 }
 
@@ -60,7 +60,6 @@ export const sendEventCreated = async (event: any) => {
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 
@@ -80,7 +79,6 @@ export const sendRegistrationApproved = async (user_id_list: string[], event_tit
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 
@@ -100,7 +98,6 @@ export const sendInvitation = async (user_id_list: string[], event_title: string
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 
@@ -120,7 +117,6 @@ export const sendMeetingStarted = async (user_id_list: string[], event_title: st
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 
@@ -140,7 +136,6 @@ export const sendMeetingEnded = async (user_id_list: string[], event_title: stri
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 
@@ -162,7 +157,6 @@ export const sendEventUpdated = async (event: any) => {
     });
   } catch (error) {
     console.error('Error creating notification:', error);
-    throw error;
   }
 }
 

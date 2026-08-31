@@ -1,5 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
+import { objectIdParam, handleValidation } from "../helpers/validate";
 const router = express.Router();
 const EventRegisterController = require("../controllers/EventRegisterController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -24,13 +25,13 @@ const start_meeting_validation = [
 ];
 
 router.post("/", register_validation, jwtAuth, attendeeAuth, EventRegisterController.register);
-router.delete("/:id", jwtAuth, attendeeAuth, EventRegisterController.unregister);
+router.delete("/:id", objectIdParam("id", "event"), handleValidation, jwtAuth, attendeeAuth, EventRegisterController.unregister);
 router.get("/events/approved", jwtAuth, attendeeAuth, EventRegisterController.getAllApprovedByUserId);
 router.get("/events", jwtAuth, attendeeAuth, EventRegisterController.getAllByUserId);
-router.get("/:id/approved", jwtAuth, attendeeAuth, EventRegisterController.isRegisterApproved);
+router.get("/:id/approved", objectIdParam("id", "event"), handleValidation, jwtAuth, attendeeAuth, EventRegisterController.isRegisterApproved);
 router.get("/:id/users/approved", jwtAuth, organizerAuth, eventOwnerAuth, EventRegisterController.getAllApprovedByEventId);
 router.get("/:id/users", jwtAuth, organizerAuth, eventOwnerAuth, EventRegisterController.getAllByEventId);
-router.get("/:id", jwtAuth, attendeeAuth, EventRegisterController.hasRegistered);
+router.get("/:id", objectIdParam("id", "event"), handleValidation, jwtAuth, attendeeAuth, EventRegisterController.hasRegistered);
 router.put("/approve", approve_validation, jwtAuth, organizerAuth, EventRegisterController.approveRegister);
 router.put("/meeting_started", start_meeting_validation, jwtAuth, organizerAuth, EventRegisterController.startMeeting);
 

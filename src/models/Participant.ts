@@ -4,30 +4,30 @@ const ParticipantSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'Event',
-    require: true,
+    required: true,
   },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    require: true,
+    required: true,
   },
   room_name: {
     type: String,
-    require: true,
+    required: true,
   },
   start_time: {
     type: Date,
-    require: false,
+    required: false,
     default: Date.now
   },
   end_time: {
     type: Date,
-    require: false,
+    required: false,
     default: null
   },
   duration: {
     type: Number,
-    require: false,
+    required: false,
   },
 },
 {

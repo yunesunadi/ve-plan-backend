@@ -1,6 +1,8 @@
-import { objectId } from "../helpers/utils";
+import { objectId, escapeRegExp } from "../helpers/utils";
 
 const EventModel = require("../models/Event");
+
+const SEARCH_MAX_LENGTH = 100;
 
 const omitted_user_fields = "-password -verificationToken -verificationTokenExpires -resetPasswordToken -resetPasswordExpires -googleId -facebookId";
 
@@ -37,7 +39,8 @@ export function getAllByQuery(query: any) {
 
   if (Object.entries(query).length > 0) {
     if (query.search_value) {
-      search_query = { title: { $regex: query.search_value, $options: 'i' } };
+      const safe = escapeRegExp(String(query.search_value).slice(0, SEARCH_MAX_LENGTH));
+      search_query = { title: { $regex: safe, $options: 'i' } };
     }
 
     if (query.time) {
@@ -65,7 +68,7 @@ export function getAllByQuery(query: any) {
     filter = getQuery(search_query, time_query, category_query, date_query);
   }
 
-  let result = EventModel.find(filter);
+  let result = EventModel.find(filter).sort({ createdAt: -1, _id: -1 });
 
   if (query.offset) {
     result = result.skip(query.offset);
@@ -97,7 +100,7 @@ export function getMyEvents(query: any, user_id: string) {
 
   const qry = { ...type_query, user: objectId(user_id) };
 
-  let result = EventModel.find(qry);
+  let result = EventModel.find(qry).sort({ createdAt: -1, _id: -1 });
 
   if (query.offset) {
     result = result.skip(query.offset);

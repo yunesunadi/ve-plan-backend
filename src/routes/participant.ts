@@ -1,5 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
+import { objectIdParam, handleValidation } from "../helpers/validate";
 const router = express.Router();
 const ParticipantController = require("../controllers/ParticipantController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -18,7 +19,7 @@ const update_validation = [
 
 router.post("/", create_validation, jwtAuth, attendeeAuth, ParticipantController.create);
 router.put("/:id/no_end_time", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.updateNoEndTime);
-router.put("/:id", update_validation, jwtAuth, attendeeAuth, ParticipantController.update);
+router.put("/:id", objectIdParam("id", "event"), update_validation, jwtAuth, attendeeAuth, ParticipantController.update);
 router.get("/:id", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.getAll);
 router.get("/:id/stay_times", jwtAuth, organizerAuth, eventOwnerAuth, ParticipantController.getStayTimes);
 
