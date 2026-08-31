@@ -1,6 +1,13 @@
 import { objectId, escapeRegExp } from "../helpers/utils";
+import { removeUpload } from "../helpers/uploads";
 
 const UserModel = require("../models/User");
+const EventModel = require("../models/Event");
+const EventRegisterModel = require("../models/EventRegister");
+const EventInviteModel = require("../models/EventInvite");
+const ParticipantModel = require("../models/Participant");
+const NotificationModel = require("../models/Notification");
+const MeetingModel = require("../models/Meeting");
 
 const ATTENDEE_SEARCH_LIMIT = 50;
 
@@ -84,6 +91,40 @@ export async function upsertGoogleUser(params: {
 
 export function findById(id: string) {
   return UserModel.findById(objectId(id)).select("-password");
+}
+
+export function findByIdWithPassword(id: string) {
+  return UserModel.findById(objectId(id));
+}
+
+export async function ownsEventWithLiveMeeting(id: string): Promise<boolean> {
+  const events = await EventModel.find({ user: objectId(id) }).select("_id").lean();
+  if (events.length === 0) return false;
+  const live = await MeetingModel.exists({
+    event: { $in: events.map((e: any) => e._id) },
+    ended: false,
+  });
+  return Boolean(live);
+}
+
+export async function deleteAccount(id: string) {
+  const _id = objectId(id);
+  const user = await UserModel.findById(_id).lean();
+  if (!user) return null;
+
+  await EventModel.deleteMany({ user: _id });
+
+  await Promise.all([
+    EventRegisterModel.deleteMany({ user: _id }),
+    EventInviteModel.deleteMany({ user: _id }),
+    ParticipantModel.deleteMany({ user: _id }),
+    NotificationModel.deleteMany({ recipient: _id }),
+  ]);
+
+  removeUpload(user.profile, "profiles");
+
+  await UserModel.deleteOne({ _id });
+  return user;
 }
 
 export async function hasPassword(id: string) {

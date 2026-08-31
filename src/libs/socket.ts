@@ -53,6 +53,15 @@ export const initializeSocket = (server: HTTPServer) => {
   });
 }
 
+export const disconnectUser = (userId: string) => {
+  if (!io) return;
+  try {
+    io.in(`user_${userId}`).disconnectSockets(true);
+  } catch (error) {
+    console.error(`Error disconnecting sockets for user ${userId}:`, error);
+  }
+};
+
 export const sendToUser = (userId: string, emitted_event: string, data: any) => {
   if (!io) {
     console.error('Socket.IO not initialized');

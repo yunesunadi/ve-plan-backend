@@ -1,22 +1,32 @@
 import { Response } from "express";
 import { isRequestInvalid, maskEmail } from "../helpers/utils";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
-import { hashPassword, comparePassword } from "../helpers/password";
+import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
 import * as UserService from "../services/UserService";
+import * as SocketService from "../libs/socket";
 
 const MIN_ATTENDEE_SEARCH_LENGTH = 2;
 
 export async function hasRole(req: any, res: Response) {
   try {
-    const { role } = await UserService.getRole(req.user._id);
-    
-    if (!role) {
+    const account = await UserService.getRole(req.user._id);
+
+    if (!account) {
+      return res.status(401).json({
+        status: "error",
+        message: "This account no longer exists."
+      });
+    }
+
+    if (!account.role) {
       return res.status(200).json({
         status: "success",
         message: "There is no role for this user.",
         has_role: false
       });
     }
+
+    const role = account.role;
 
     return res.status(200).json({
       status: "success",
@@ -143,9 +153,16 @@ export async function updatePassword(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const user = await UserService.findByEmail(req.user.email);
+    const user = await UserService.findByIdWithPassword(req.user._id);
 
-    if (!user || !user.password) {
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        message: "This account no longer exists."
+      });
+    }
+
+    if (!user.password) {
       return res.status(400).json({
         status: "error",
         message: "This account uses social login and has no password."
@@ -181,6 +198,60 @@ export async function updatePassword(req: any, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Update password successfully.",
+    });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong."
+    });
+  }
+}
+
+export async function deleteAccount(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const user = await UserService.findByIdWithPassword(req.user._id);
+
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        message: "This account no longer exists."
+      });
+    }
+
+    if (user.password) {
+      const ok = await comparePassword(req.body.password ?? "", user.password);
+      if (!ok) {
+        return res.status(401).json({
+          status: "error",
+          message: "Password is incorrect."
+        });
+      }
+    } else {
+      await dummyCompare(req.body.password ?? "");
+      if ((req.body.confirm_email ?? "").trim().toLowerCase() !== user.email.toLowerCase()) {
+        return res.status(400).json({
+          status: "error",
+          message: "Type your account email address to confirm deletion."
+        });
+      }
+    }
+
+    if (await UserService.ownsEventWithLiveMeeting(req.user._id)) {
+      return res.status(409).json({
+        status: "error",
+        message: "End your live meeting before deleting your account."
+      });
+    }
+
+    await UserService.deleteAccount(req.user._id);
+    SocketService.disconnectUser(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Your account and all associated data have been deleted."
     });
   } catch (err: any) {
     console.log("err", err);
