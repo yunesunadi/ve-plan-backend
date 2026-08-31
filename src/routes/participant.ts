@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import { objectIdParam, handleValidation } from "../helpers/validate";
+import { objectIdParam } from "../helpers/validate";
 const router = express.Router();
 const ParticipantController = require("../controllers/ParticipantController");
 const jwtAuth = require("../middlewares/jwtAuth");

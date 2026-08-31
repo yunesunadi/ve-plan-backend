@@ -29,23 +29,14 @@ passport.use(new GoogleStrategy({
       return done(new Error('No email found in Google profile'));
     }
 
-    let user = await UserService.findByEmail(profile.emails[0].value);
+    let user: any = await UserService.upsertGoogleUser({
+      googleId: profile.id,
+      name: profile._json.name || profile.displayName || "Google user",
+      email: profile.emails[0].value,
+      emailVerified: (profile._json as any).email_verified === true,
+      profile: profile.photos?.[0]?.value,
+    });
 
-    if (user && !user.googleId) {
-      user.googleId = profile.id;
-      await user.save();
-    }
-
-    if (!user) {
-      user = await UserService.create({
-        name: profile._json.name,
-        email: profile.emails[0].value,
-        googleId: profile.id,
-        isVerified: true,
-        profile: profile.photos?.[0]?.value
-      });
-    }
-    
     user._id = user._id.toString();
     user = user.toJSON();
     delete user.password;

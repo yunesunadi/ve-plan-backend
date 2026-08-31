@@ -1,7 +1,7 @@
 import { Response } from "express";
 import { isRequestInvalid, maskEmail } from "../helpers/utils";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
-import bcrypt from "bcrypt";
+import { hashPassword, comparePassword } from "../helpers/password";
 import * as UserService from "../services/UserService";
 
 const MIN_ATTENDEE_SEARCH_LENGTH = 2;
@@ -152,9 +152,7 @@ export async function updatePassword(req: any, res: Response) {
       });
     }
 
-    const isCurrentPasswordCorrect = await bcrypt.compare(req.body.current_password, user.password);
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(req.body.new_password, salt);
+    const isCurrentPasswordCorrect = await comparePassword(req.body.current_password, user.password);
 
     if(!isCurrentPasswordCorrect) {
       return res.status(400).json({
@@ -163,6 +161,14 @@ export async function updatePassword(req: any, res: Response) {
       });
     }
 
+    if (await comparePassword(req.body.new_password, user.password)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Choose a password you haven't used on this account before."
+      });
+    }
+
+    const hash = await hashPassword(req.body.new_password);
     const updated = await UserService.updatePassword(req.user._id, hash);
 
     if (!updated) {

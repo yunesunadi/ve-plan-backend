@@ -12,6 +12,13 @@ export function findByEmail(email: string) {
   return UserModel.findOne({ email });
 }
 
+export class AccountLinkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AccountLinkError";
+  }
+}
+
 export async function upsertFacebookUser(params: {
   facebookId: string;
   name: string;
@@ -21,6 +28,11 @@ export async function upsertFacebookUser(params: {
   let user = await UserModel.findOne({ email: params.email });
 
   if (user && !user.facebookId) {
+    if (user.password) {
+      throw new AccountLinkError(
+        "An account with this email already exists. Sign in with your password, then link Facebook from settings."
+      );
+    }
     user.facebookId = params.facebookId;
     await user.save();
   }
@@ -30,6 +42,38 @@ export async function upsertFacebookUser(params: {
       name: params.name,
       email: params.email,
       facebookId: params.facebookId,
+      isVerified: true,
+      profile: params.profile,
+    });
+  }
+
+  return user;
+}
+
+export async function upsertGoogleUser(params: {
+  googleId: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  profile?: string;
+}) {
+  let user = await UserModel.findOne({ email: params.email });
+
+  if (user && !user.googleId) {
+    if (user.password && !params.emailVerified) {
+      throw new AccountLinkError(
+        "An account with this email already exists. Sign in with your password, then link Google from settings."
+      );
+    }
+    user.googleId = params.googleId;
+    await user.save();
+  }
+
+  if (!user) {
+    user = await create({
+      name: params.name,
+      email: params.email,
+      googleId: params.googleId,
       isVerified: true,
       profile: params.profile,
     });
@@ -88,16 +132,39 @@ export function updatePassword(id: string, password: string) {
 }
 
 export function findByVerificationToken(token: string) {
-  return UserModel.findOne({
-    verificationToken: token,
-    verificationTokenExpires: { $gt: new Date() }
-  });
+  return UserModel.findOne({ verificationToken: token });
+}
+
+export function findUnverifiedByEmail(email: string) {
+  return UserModel.findOne({ email, isVerified: false });
 }
 
 export function verifyUser(id: string) {
   return UserModel.findByIdAndUpdate(
     objectId(id),
-    { isVerified: true, verificationToken: null },
+    { isVerified: true, verificationTokenExpires: null },
+    { new: true }
+  );
+}
+
+export function replaceUnverified(
+  id: string,
+  data: { name: string; password: string; profile?: string; verificationToken: string; verificationTokenExpires: Date }
+) {
+  const patch: Record<string, unknown> = {
+    name: data.name,
+    password: data.password,
+    verificationToken: data.verificationToken,
+    verificationTokenExpires: data.verificationTokenExpires,
+  };
+  if (data.profile !== undefined) patch.profile = data.profile;
+  return UserModel.findByIdAndUpdate(objectId(id), patch, { new: true });
+}
+
+export function setVerificationToken(id: string, token: string, expires: Date) {
+  return UserModel.findByIdAndUpdate(
+    objectId(id),
+    { verificationToken: token, verificationTokenExpires: expires },
     { new: true }
   );
 }
@@ -111,10 +178,7 @@ export function setResetPasswordToken(id: string, token: string, expires: Date) 
 }
 
 export function findByResetPasswordToken(token: string) {
-  return UserModel.findOne({
-    resetPasswordToken: token,
-    resetPasswordExpires: { $gt: new Date() }
-  });
+  return UserModel.findOne({ resetPasswordToken: token });
 }
 
 export function updatePasswordAndClearReset(id: string, password: string) {
@@ -123,7 +187,10 @@ export function updatePasswordAndClearReset(id: string, password: string) {
     {
       password,
       resetPasswordToken: null,
-      resetPasswordExpires: null
+      resetPasswordExpires: null,
+      isVerified: true,
+      verificationToken: null,
+      verificationTokenExpires: null
     },
     { new: true }
   );

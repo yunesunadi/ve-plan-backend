@@ -39,6 +39,11 @@ const facebook_token_validation = [
   body("access_token", "Facebook access token is required.").notEmpty(),
 ];
 
+const email_only_validation = [
+  body("email", "Email is required.").notEmpty(),
+  body("email", "Invalid email.").isEmail(),
+];
+
 const profile_upload = imageUpload("profiles");
 
 const oauthState = (req: express.Request): "mobile" | "web" => req.query.client === "mobile" ? "mobile" : "web";
@@ -47,6 +52,7 @@ router.post("/register", authLimiter, profile_upload.single("profile"), register
 router.post("/login", authLimiter, login_validation, AuthController.login);
 router.post("/role", role_validation, jwtAuth, AuthController.role)
 router.post("/verify_email", AuthController.verify);
+router.post("/resend_verification", passwordResetLimiter, email_only_validation, AuthController.resendVerification);
 router.post("/forgot_password", passwordResetLimiter, forgot_password_validation, AuthController.forgotPassword);
 router.post("/reset_password", passwordResetLimiter, reset_password_validation, AuthController.resetPassword);
 router.get("/google", (req, res, next) => passport.authenticate("google", { scope: ["profile", "email"], state: oauthState(req) })(req, res, next));

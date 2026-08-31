@@ -1,10 +1,15 @@
 import { Request, Response } from "express";
 import { isRequestInvalid, bestEffort } from "../helpers/utils";
 import { verifyImageFile } from "../helpers/uploads";
-import bcrypt from "bcrypt";
+import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import * as UserService from "../services/UserService";
+import { AccountLinkError } from "../services/UserService";
+
+const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const RESET_TTL_MS = 60 * 60 * 1000;
+const GENERIC_LOGIN_ERROR = "Email or password is incorrect.";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 import * as FacebookService from "../services/FacebookService";
@@ -13,15 +18,6 @@ export async function register(req: Request, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
-    const existed_user = await UserService.findByEmail(req.body.email);
-
-    if (existed_user) {
-      return res.status(409).json({
-        status: "error",
-        message: "User with this email is already existed.",
-      });
-    }
-
     if (!verifyImageFile(req.file)) {
       return res.status(415).json({
         status: "error",
@@ -29,11 +25,47 @@ export async function register(req: Request, res: Response) {
       });
     }
 
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(req.body.password, salt);
+    const existed_user = await UserService.findByEmail(req.body.email);
+    const hash = await hashPassword(req.body.password);
     const filename = req.file?.filename;
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const verificationTokenExpires = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+    if (existed_user) {
+      const claimable =
+        !existed_user.isVerified &&
+        (!existed_user.verificationTokenExpires ||
+          existed_user.verificationTokenExpires.getTime() < Date.now());
+
+      if (!claimable) {
+        return res.status(409).json({
+          status: "error",
+          message: "User with this email is already existed.",
+        });
+      }
+
+      await UserService.replaceUnverified(existed_user._id, {
+        name: req.body.name,
+        password: hash,
+        profile: filename,
+        verificationToken,
+        verificationTokenExpires,
+      });
+
+      await bestEffort("verification email (re-register)", () => EmailService.send({
+        action: "email_verified",
+        recipient: existed_user.email,
+        additional: {
+          name: req.body.name,
+          link: `${process.env.FRONTEND_URL}/verify_email?token=${verificationToken}`
+        }
+      }));
+
+      return res.status(201).json({
+        status: "success",
+        message: "Register successfully. Please check your email to verify your account."
+      });
+    }
 
     let user;
 
@@ -57,14 +89,14 @@ export async function register(req: Request, res: Response) {
       throw createErr;
     }
 
-    await EmailService.send({
+    await bestEffort("verification email", () => EmailService.send({
       action: "email_verified",
       recipient: user.email,
       additional: {
         name: user.name,
         link: `${process.env.FRONTEND_URL}/verify_email?token=${verificationToken}`
       }
-    });
+    }));
 
     return res.status(201).json({
       status: "success",
@@ -88,34 +120,29 @@ export async function login(req: Request, res: Response) {
 
     let user = await UserService.findByEmail(email);
 
-    if(!user) {
-      return res.status(404).json({
-        status: "error",
-        message: "User with this email is not found."
-      });
+    if (!user) {
+      await dummyCompare(password);
+      return res.status(401).json({ status: "error", message: GENERIC_LOGIN_ERROR });
     }
 
     if (!user.password) {
-      await bcrypt.compare(password, "$2b$12$0000000000000000000000000000000000000000000000000000a");
+      await dummyCompare(password);
       return res.status(400).json({
         status: "error",
         message: "This account uses social login. Sign in with Google or Facebook."
       });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordCorrect = await comparePassword(password, user.password);
 
-    if(!isPasswordCorrect) {
-      return res.status(401).json({
-        status: "error",
-        message: "Incorrect password."
-      });
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ status: "error", message: GENERIC_LOGIN_ERROR });
     }
 
-    if(!user.isVerified) {
-      return res.status(401).json({
+    if (!user.isVerified) {
+      return res.status(403).json({
         status: "error",
-        message: "Please verify your email to login."
+        message: "Please verify your email before logging in. Check your inbox or request a new link."
       });
     }
 
@@ -153,13 +180,26 @@ export async function verify(req: any, res: Response) {
     let user = await UserService.findByVerificationToken(token);
 
     if (!user) {
-      return res.status(409).json({
+      return res.status(400).json({
         status: "error",
-        message: "Invalid or expired verification token. Please register again or request a new verification email."
+        message: "This verification link is not valid."
       });
     }
 
-    await UserService.verifyUser(user._id);
+    if (!user.isVerified) {
+      const expired =
+        user.verificationTokenExpires &&
+        user.verificationTokenExpires.getTime() < Date.now();
+
+      if (expired) {
+        return res.status(410).json({
+          status: "error",
+          message: "This verification link has expired. Request a new one."
+        });
+      }
+
+      await UserService.verifyUser(user._id);
+    }
 
     user = await UserService.findById(user._id);
     user._id = user._id.toString();
@@ -221,49 +261,31 @@ export async function role(req: any, res: Response) {
 }
 
 export async function forgotPassword(req: Request, res: Response) {
+  const GENERIC = "If an account exists for that address, a password reset link has been sent.";
+
   try {
+    if (isRequestInvalid(req, res)) return;
+
     const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        status: "error",
-        message: "Email is required."
-      });
-    }
-
     const user = await UserService.findByEmail(email);
 
-    if (!user) {
-      return res.status(404).json({
-        status: "error",
-        message: "No user found with this email."
-      });
+    if (user && user.password) {
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const resetTokenExpires = new Date(Date.now() + RESET_TTL_MS);
+
+      await UserService.setResetPasswordToken(user._id, resetToken, resetTokenExpires);
+
+      await bestEffort("password reset email", () => EmailService.send({
+        action: "reset_password",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          link: `${process.env.FRONTEND_URL}/reset_password?token=${resetToken}`
+        }
+      }));
     }
 
-    if (!user.password && (user.googleId || user.facebookId)) {
-      return res.status(400).json({
-        status: "error",
-        message: "This account uses social login and has no password."
-      });
-    }
-
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
-
-    await UserService.setResetPasswordToken(user._id, resetToken, resetTokenExpires);
-
-    await EmailService.send({
-      action: "reset_password",
-      recipient: user.email,
-      additional: {
-        name: user.name,
-        link: `${process.env.FRONTEND_URL}/reset_password?token=${resetToken}`
-      }
-    });
-    return res.status(200).json({
-      status: "success",
-      message: "Sent password reset email successfully."
-    });
+    return res.status(200).json({ status: "success", message: GENERIC });
   } catch (err: any) {
     console.log("err", err);
     return res.status(500).json({
@@ -295,9 +317,16 @@ export async function resetPassword(req: Request, res: Response) {
     const user = await UserService.findByResetPasswordToken(token as string);
 
     if (!user) {
-      return res.status(409).json({
+      return res.status(400).json({
         status: "error",
-        message: "Invalid or expired password reset token."
+        message: "This password reset link is not valid."
+      });
+    }
+
+    if (user.resetPasswordExpires && user.resetPasswordExpires.getTime() < Date.now()) {
+      return res.status(410).json({
+        status: "error",
+        message: "This password reset link has expired. Request a new one."
       });
     }
 
@@ -308,8 +337,14 @@ export async function resetPassword(req: Request, res: Response) {
       });
     }
 
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(password, salt);
+    if (user.password && await comparePassword(password, user.password)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Choose a password you haven't used on this account before."
+      });
+    }
+
+    const hash = await hashPassword(password);
 
     await UserService.updatePasswordAndClearReset(user._id, hash);
 
@@ -317,6 +352,40 @@ export async function resetPassword(req: Request, res: Response) {
       status: "success",
       message: "Password has been reset successfully."
     });
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong."
+    });
+  }
+}
+
+export async function resendVerification(req: Request, res: Response) {
+  const GENERIC = "If that address needs verifying, a new link has been sent.";
+
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const user = await UserService.findUnverifiedByEmail(req.body.email);
+
+    if (user) {
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const verificationTokenExpires = new Date(Date.now() + VERIFICATION_TTL_MS);
+
+      await UserService.setVerificationToken(user._id, verificationToken, verificationTokenExpires);
+
+      await bestEffort("verification email (resend)", () => EmailService.send({
+        action: "email_verified",
+        recipient: user.email,
+        additional: {
+          name: user.name,
+          link: `${process.env.FRONTEND_URL}/verify_email?token=${verificationToken}`
+        }
+      }));
+    }
+
+    return res.status(200).json({ status: "success", message: GENERIC });
   } catch (err: any) {
     console.log("err", err);
     return res.status(500).json({
@@ -391,12 +460,20 @@ export async function facebookToken(req: Request, res: Response) {
       });
     }
 
-    let user: any = await UserService.upsertFacebookUser({
-      facebookId: profile.id,
-      name: profile.name,
-      email: profile.email,
-      profile: profile.picture,
-    });
+    let user: any;
+    try {
+      user = await UserService.upsertFacebookUser({
+        facebookId: profile.id,
+        name: profile.name,
+        email: profile.email,
+        profile: profile.picture,
+      });
+    } catch (linkErr: any) {
+      if (linkErr instanceof AccountLinkError) {
+        return res.status(409).json({ status: "error", message: linkErr.message });
+      }
+      throw linkErr;
+    }
 
     user._id = user._id.toString();
     user = user.toJSON();
