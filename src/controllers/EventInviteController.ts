@@ -57,18 +57,14 @@ export async function invite(req: any, res: Response) {
       });
     }
 
-    await bestEffort("invitation_sent emails", () => Promise.all(user_id_list.map(async (user_id: string) => {
-      const user = await UserService.findById(user_id);
-
-      await EmailService.send({
+    await bestEffort("invitation_sent emails", async () => {
+      const users = await UserService.findManyByIds(user_id_list);
+      await EmailService.sendBatch(users.map((user: any) => ({
         action: "invitation_sent",
         recipient: user.email,
-        additional: {
-          name: user.name,
-          event_title: event.title,
-        }
-      });
-    })));
+        additional: { name: user.name, event_title: event.title },
+      })));
+    });
 
     await bestEffort("invitation notifications", () => NotificationService.sendInvitation(user_id_list, event));
 
@@ -212,18 +208,14 @@ export async function startMeeting(req: any, res: Response) {
       });
     }
 
-    await bestEffort("meeting_started emails", () => Promise.all(user_id_list.map(async (user_id: string) => {
-      const user = await UserService.findById(user_id);
-
-      await EmailService.send({
+    await bestEffort("meeting_started emails", async () => {
+      const users = await UserService.findManyByIds(user_id_list);
+      await EmailService.sendBatch(users.map((user: any) => ({
         action: "meeting_started",
         recipient: user.email,
-        additional: {
-          name: user.name,
-          event_title: event.title,
-        }
-      });
-    })));
+        additional: { name: user.name, event_title: event.title },
+      })));
+    });
 
     await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event));
 

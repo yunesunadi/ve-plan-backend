@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { objectId, escapeRegExp } from "../helpers/utils";
 import { removeUpload } from "../helpers/uploads";
 
@@ -95,6 +96,13 @@ export function findById(id: string) {
 
 export function findByIdWithPassword(id: string) {
   return UserModel.findById(objectId(id));
+}
+
+export function findManyByIds(ids: string[]) {
+  const objectIds = ids
+    .filter((id) => mongoose.isValidObjectId(id))
+    .map((id) => objectId(id));
+  return UserModel.find({ _id: { $in: objectIds } }).select("name email profile role").lean();
 }
 
 export async function ownsEventWithLiveMeeting(id: string): Promise<boolean> {

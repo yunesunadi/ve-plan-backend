@@ -332,16 +332,11 @@ async function notifyMeetingAttendees(event_id: string, event_title: string, act
       .map((item: any) => [String(item.user._id), item.user])
   ).values()];
 
-  await Promise.all(recipients.map(async (user: any) => {
-    await EmailService.send({
-      action,
-      recipient: user.email,
-      additional: {
-        name: user.name,
-        event_title,
-      }
-    });
-  }));
+  await EmailService.sendBatch(recipients.map((user: any) => ({
+    action,
+    recipient: user.email,
+    additional: { name: user.name, event_title },
+  })));
 
   const user_id_list = recipients.map((user: any) => String(user._id));
   const event_ref = { _id: event_id, title: event_title };

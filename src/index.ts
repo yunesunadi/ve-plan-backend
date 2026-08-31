@@ -20,7 +20,9 @@ import notificationRouter from "./routes/notification";
 require("dotenv").config();
 
 import { assertEnv, corsOrigin } from "./libs/env";
+import { assertTemplates } from "./services/EmailService";
 assertEnv();
+assertTemplates();
 
 require("./libs/connectdb");
 require("./libs/passport");
