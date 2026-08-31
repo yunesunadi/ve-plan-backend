@@ -71,6 +71,11 @@ export function approveRegister(user_id_list: string[], event_id: string) {
   return EventRegisterModel.updateMany({ user: { $in: user_id_list_object }, event }, { register_approved: true }, { new: true });
 }
 
+export async function getEventUserIds(event: any): Promise<string[]> {
+  const rows = await EventRegisterModel.find({ event }).select("user").lean();
+  return rows.map((r: any) => r.user.toString());
+}
+
 export function getAllMeetingStartedByEventId(event_id: string) {
   const event = objectId(event_id);
   return EventRegisterModel.find({ event, meeting_started: true }).populate("user", omitted_user_fields).populate("event");

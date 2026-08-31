@@ -40,6 +40,10 @@ const EventSchema = new Schema({
     ref: 'User',
     required: true,
   },
+  updateNotifiedAt: {
+    type: Date,
+    default: null,
+  },
 },
 {
   timestamps: true,

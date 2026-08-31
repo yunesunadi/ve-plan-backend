@@ -135,6 +135,15 @@ export function update(id: string, event: any) {
   return EventModel.findByIdAndUpdate(objectId(id), event, { new: true });
 }
 
+export async function getParticipantUserIds(event_id: string): Promise<string[]> {
+  const event = objectId(event_id);
+  const [registered, invited] = await Promise.all([
+    EventRegisterService.getEventUserIds(event),
+    EventInviteService.getEventUserIds(event),
+  ]);
+  return [...new Set([...registered, ...invited])];
+}
+
 export function deleteOne(id: string) {
   return EventModel.findOneAndDelete(objectId(id));
 }

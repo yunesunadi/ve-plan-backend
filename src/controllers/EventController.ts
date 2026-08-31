@@ -1,11 +1,21 @@
 import { Response } from "express";
 import mongoose from "mongoose";
-import { isRequestInvalid, isEventExpired } from "../helpers/utils";
+import { isRequestInvalid, isEventExpired, bestEffort } from "../helpers/utils";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { endNotAfterStart } from "../helpers/time";
 import * as EventService from "../services/EventService";
 import * as MeetingService from "../services/MeetingService";
 import * as NotificationService from "../services/NotificationService";
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function materialFieldsChanged(before: any, after: any): boolean {
+  if (String(before.title) !== String(after.title)) return true;
+  for (const key of ["date", "start_time", "end_time"]) {
+    if (new Date(before[key]).getTime() !== new Date(after[key]).getTime()) return true;
+  }
+  return false;
+}
 
 export async function create(req: any, res: Response) {
   try {
@@ -57,7 +67,7 @@ export async function create(req: any, res: Response) {
     } 
 
     if (event.type === "public") {
-      await NotificationService.sendEventCreated(event);
+      await bestEffort("event_created broadcast", () => NotificationService.sendEventCreated(event));
     }
 
     return res.status(201).json({
@@ -221,10 +231,21 @@ export async function update(req: any, res: Response) {
         status: "error",
         message: "Error updating event.",
       });
-    } 
+    }
 
-    if (event.type === "public") {
-      await NotificationService.sendEventUpdated(event);
+    if (materialFieldsChanged(req.event, updated_data)) {
+      if (event.type === "public") {
+        const last = req.event.updateNotifiedAt ? new Date(req.event.updateNotifiedAt).getTime() : 0;
+        if (Date.now() - last > ONE_HOUR_MS) {
+          await EventService.update(req.params.id, { updateNotifiedAt: new Date() });
+          await bestEffort("event_updated broadcast", () => NotificationService.sendEventUpdated(event));
+        }
+      } else {
+        await bestEffort("event_updated to participants", async () => {
+          const user_ids = await EventService.getParticipantUserIds(req.params.id);
+          if (user_ids.length) await NotificationService.sendEventChangedToParticipants(event, user_ids);
+        });
+      }
     }
 
     return res.status(200).json({

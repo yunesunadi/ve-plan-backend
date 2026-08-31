@@ -196,6 +196,7 @@ export function updatePasswordAndClearReset(id: string, password: string) {
   );
 }
 
-export function findAllVerified() {
-  return UserModel.find({ isVerified: true });
+export async function findAllVerifiedIds(): Promise<string[]> {
+  const rows = await UserModel.find({ isVerified: true }).select("_id").lean();
+  return rows.map((r: any) => r._id.toString());
 }

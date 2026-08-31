@@ -6,6 +6,7 @@ const jwtAuth = require("../middlewares/jwtAuth");
 router.get("/", jwtAuth, NotificationController.getUserNotifications);
 router.get("/unread_count", jwtAuth, NotificationController.getUnreadCount);
 router.post("/mark_as_read", jwtAuth, NotificationController.markAsRead);
+router.post("/mark_all_read", jwtAuth, NotificationController.markAllAsRead);
 router.delete("/", jwtAuth, NotificationController.deleteNotifications);
 
 export default router;

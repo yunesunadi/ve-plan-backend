@@ -59,6 +59,11 @@ export function acceptInvite(user_id: string, event_id: string) {
   return EventInviteModel.findOneAndUpdate({ user, event }, { invitation_accepted: true }, { new: true });
 }
 
+export async function getEventUserIds(event: any): Promise<string[]> {
+  const rows = await EventInviteModel.find({ event }).select("user").lean();
+  return rows.map((r: any) => r.user.toString());
+}
+
 export function getAllMeetingStartedByEventId(event_id: string) {
   const event = objectId(event_id);
   return EventInviteModel.find({ event, meeting_started: true }).populate("user", omitted_user_fields).populate("event");

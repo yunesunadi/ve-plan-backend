@@ -256,7 +256,7 @@ export async function approveRegister(req: any, res: Response) {
       });
     })));
 
-    await bestEffort("register_approved notifications", () => NotificationService.sendRegistrationApproved(user_id_list, event.title));
+    await bestEffort("register_approved notifications", () => NotificationService.sendRegistrationApproved(user_id_list, event));
 
     return res.status(200).json({
       status: "success",
@@ -315,7 +315,7 @@ export async function startMeeting(req: any, res: Response) {
       });
     })));
 
-    await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event.title));
+    await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event));
 
     return res.status(200).json({
       status: "success",

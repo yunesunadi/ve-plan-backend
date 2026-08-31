@@ -70,7 +70,7 @@ export async function invite(req: any, res: Response) {
       });
     })));
 
-    await bestEffort("invitation notifications", () => NotificationService.sendInvitation(user_id_list, event.title));
+    await bestEffort("invitation notifications", () => NotificationService.sendInvitation(user_id_list, event));
 
     return res.status(201).json({
       status: "success",
@@ -225,7 +225,7 @@ export async function startMeeting(req: any, res: Response) {
       });
     })));
 
-    await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event.title));
+    await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event));
 
     return res.status(200).json({
       status: "success",

@@ -344,11 +344,12 @@ async function notifyMeetingAttendees(event_id: string, event_title: string, act
   }));
 
   const user_id_list = recipients.map((user: any) => String(user._id));
+  const event_ref = { _id: event_id, title: event_title };
 
   if (action === "meeting_ended") {
-    await NotificationService.sendMeetingEnded(user_id_list, event_title);
+    await NotificationService.sendMeetingEnded(user_id_list, event_ref);
   } else {
-    await NotificationService.sendMeetingStarted(user_id_list, event_title);
+    await NotificationService.sendMeetingStarted(user_id_list, event_ref);
   }
 }
 
