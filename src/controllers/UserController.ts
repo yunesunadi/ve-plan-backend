@@ -4,6 +4,7 @@ import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
 import * as UserService from "../services/UserService";
 import * as SocketService from "../libs/socket";
+import { signAuthToken } from "../helpers/authToken";
 
 const MIN_ATTENDEE_SEARCH_LENGTH = 2;
 
@@ -195,9 +196,13 @@ export async function updatePassword(req: any, res: Response) {
       });
     }
 
+    SocketService.disconnectUser(req.user._id);
+    const token = signAuthToken(updated);
+
     return res.status(200).json({
       status: "success",
       message: "Update password successfully.",
+      token
     });
   } catch (err: any) {
     console.log("err", err);

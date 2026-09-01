@@ -1,4 +1,5 @@
 import express from "express";
+import crypto from "crypto";
 import { body } from "express-validator";
 import passport from "passport";
 import { imageUpload } from "../helpers/uploads";
@@ -46,7 +47,25 @@ const email_only_validation = [
 
 const profile_upload = imageUpload("profiles");
 
-const oauthState = (req: express.Request): "mobile" | "web" => req.query.client === "mobile" ? "mobile" : "web";
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
+const startOAuth = (provider: "google" | "facebook", scope: string[]) =>
+  (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const nonce = crypto.randomBytes(16).toString("hex");
+    const client = req.query.client === "mobile" ? "mobile" : "web";
+
+    res.cookie("oauth_state", nonce, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      signed: true,
+      maxAge: OAUTH_STATE_TTL_MS,
+    });
+
+    const state = Buffer.from(JSON.stringify({ nonce, client })).toString("base64url");
+
+    return passport.authenticate(provider, { scope, state })(req, res, next);
+  };
 
 router.post("/register", authLimiter, profile_upload.single("profile"), register_validation, AuthController.register);
 router.post("/login", authLimiter, login_validation, AuthController.login);
@@ -55,9 +74,9 @@ router.post("/verify_email", AuthController.verify);
 router.post("/resend_verification", passwordResetLimiter, email_only_validation, AuthController.resendVerification);
 router.post("/forgot_password", passwordResetLimiter, forgot_password_validation, AuthController.forgotPassword);
 router.post("/reset_password", passwordResetLimiter, reset_password_validation, AuthController.resetPassword);
-router.get("/google", (req, res, next) => passport.authenticate("google", { scope: ["profile", "email"], state: oauthState(req) })(req, res, next));
+router.get("/google", startOAuth("google", ["profile", "email"]));
 router.get("/google/callback", passport.authenticate("google", { session: false, failureRedirect: "/login" }), AuthController.googleCallback);
-router.get("/facebook", (req, res, next) => passport.authenticate("facebook", { scope: ["public_profile", "email"], state: oauthState(req) })(req, res, next));
+router.get("/facebook", startOAuth("facebook", ["public_profile", "email"]));
 router.get("/facebook/callback", passport.authenticate("facebook", { session: false, failureRedirect: "/login" }), AuthController.facebookCallback);
 router.post("/facebook/token", authLimiter, facebook_token_validation, AuthController.facebookToken);
 

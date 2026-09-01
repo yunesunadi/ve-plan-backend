@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { isRequestInvalid, bestEffort } from "../helpers/utils";
 import { verifyImageFile } from "../helpers/uploads";
 import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
-import jwt from "jsonwebtoken";
+import { signAuthToken } from "../helpers/authToken";
 import crypto from "crypto";
 import * as UserService from "../services/UserService";
 import { AccountLinkError } from "../services/UserService";
@@ -13,6 +13,7 @@ const GENERIC_LOGIN_ERROR = "Email or password is incorrect.";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 import * as FacebookService from "../services/FacebookService";
+import * as SocketService from "../libs/socket";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -146,12 +147,8 @@ export async function login(req: Request, res: Response) {
       });
     }
 
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
-    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
-    
+    const token = signAuthToken(user);
+
     return res.status(200).json({
       status: "success",
       message: "Login successfully.",
@@ -202,12 +199,8 @@ export async function verify(req: any, res: Response) {
     }
 
     user = await UserService.findById(user._id);
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
 
-    const jwt_token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+    const jwt_token = signAuthToken(user);
 
     return res.status(200).json({
       status: "success",
@@ -236,13 +229,9 @@ export async function role(req: any, res: Response) {
       });
     }
 
-    let user: any = set_role;
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
+    const user: any = set_role;
 
-    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+    const token = signAuthToken(user);
 
     await bestEffort("registration welcome notification", () => NotificationService.sendRegistrationWelcome(user));
 
@@ -348,6 +337,8 @@ export async function resetPassword(req: Request, res: Response) {
 
     await UserService.updatePasswordAndClearReset(user._id, hash);
 
+    await bestEffort("revoke sessions after password reset", async () => SocketService.disconnectUser(user._id.toString()));
+
     return res.status(200).json({
       status: "success",
       message: "Password has been reset successfully."
@@ -395,8 +386,35 @@ export async function resendVerification(req: Request, res: Response) {
   }
 }
 
+type OAuthClient = "mobile" | "web";
+
+function resolveOAuthState(req: any, res: Response): OAuthClient | null {
+  const raw = typeof req.query.state === "string" ? req.query.state : "";
+  let parsed: any;
+
+  try {
+    parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
+  } catch {
+    res.status(400).json({ status: "error", message: "Invalid OAuth state." });
+    return null;
+  }
+
+  const cookieNonce = req.signedCookies?.oauth_state;
+
+  if (!parsed || typeof parsed.nonce !== "string" || !cookieNonce || parsed.nonce !== cookieNonce) {
+    res.status(400).json({ status: "error", message: "Invalid OAuth state." });
+    return null;
+  }
+
+  res.clearCookie("oauth_state");
+  return parsed.client === "mobile" ? "mobile" : "web";
+}
+
 export async function googleCallback(req: any, res: Response) {
   try {
+    const client = resolveOAuthState(req, res);
+    if (!client) return;
+
     if (!req.user.token) {
       return res.status(401).json({
         status: "error",
@@ -404,7 +422,8 @@ export async function googleCallback(req: any, res: Response) {
       });
     }
 
-    return res.redirect(socialLoginRedirect(req));
+    res.setHeader("Referrer-Policy", "no-referrer");
+    return res.redirect(socialLoginRedirect(req.user.token, client));
   } catch (err) {
     return res.status(500).json({
       status: "error",
@@ -415,6 +434,9 @@ export async function googleCallback(req: any, res: Response) {
 
 export async function facebookCallback(req: any, res: Response) {
   try {
+    const client = resolveOAuthState(req, res);
+    if (!client) return;
+
     if (!req.user.token) {
       return res.status(401).json({
         status: "error",
@@ -422,7 +444,8 @@ export async function facebookCallback(req: any, res: Response) {
       });
     }
 
-    return res.redirect(socialLoginRedirect(req));
+    res.setHeader("Referrer-Policy", "no-referrer");
+    return res.redirect(socialLoginRedirect(req.user.token, client));
   } catch (err) {
     return res.status(500).json({
       status: "error",
@@ -431,9 +454,8 @@ export async function facebookCallback(req: any, res: Response) {
   }
 }
 
-function socialLoginRedirect(req: any): string {
-  const token = req.user.token;
-  return req.query.state === "mobile"
+function socialLoginRedirect(token: string, client: OAuthClient): string {
+  return client === "mobile"
     ? `veplanauth://oauth?token=${token}`
     : `${process.env.FRONTEND_URL}/social_login_redirect?token=${token}`;
 }
@@ -475,12 +497,7 @@ export async function facebookToken(req: Request, res: Response) {
       throw linkErr;
     }
 
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
-
-    const token = jwt.sign(user, `${process.env.JWT_SECRET}`, { expiresIn: "14d" });
+    const token = signAuthToken(user);
 
     return res.status(200).json({
       status: "success",

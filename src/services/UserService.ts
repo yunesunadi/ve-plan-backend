@@ -94,6 +94,10 @@ export function findById(id: string) {
   return UserModel.findById(objectId(id)).select("-password");
 }
 
+export function findAuthContext(id: string) {
+  return UserModel.findById(objectId(id)).select("role tokenVersion name email");
+}
+
 export function findByIdWithPassword(id: string) {
   return UserModel.findById(objectId(id));
 }
@@ -177,7 +181,11 @@ export function update(id: string, data: { name: string; profile?: string }) {
 }
 
 export function updatePassword(id: string, password: string) {
-  return UserModel.findOneAndUpdate({ _id: objectId(id) }, { password });
+  return UserModel.findOneAndUpdate(
+    { _id: objectId(id) },
+    { password, $inc: { tokenVersion: 1 } },
+    { new: true }
+  );
 }
 
 export function findByVerificationToken(token: string) {
@@ -239,7 +247,8 @@ export function updatePasswordAndClearReset(id: string, password: string) {
       resetPasswordExpires: null,
       isVerified: true,
       verificationToken: null,
-      verificationTokenExpires: null
+      verificationTokenExpires: null,
+      $inc: { tokenVersion: 1 }
     },
     { new: true }
   );

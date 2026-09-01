@@ -3,7 +3,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 import * as UserService from '../services/UserService';
-import jwt from 'jsonwebtoken';
+import { signAuthToken } from '../helpers/authToken';
 
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -37,12 +37,7 @@ passport.use(new GoogleStrategy({
       profile: profile.photos?.[0]?.value,
     });
 
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
-    
-    const token = jwt.sign(user, process.env.JWT_SECRET!, { expiresIn: '14d' });
+    const token = signAuthToken(user);
     return done(null, { token });
   } catch (err) {
     return done(err);
@@ -67,12 +62,7 @@ passport.use(new FacebookStrategy({
       profile: profile.photos?.[0]?.value,
     });
 
-    user._id = user._id.toString();
-    user = user.toJSON();
-    delete user.password;
-    delete user.verificationToken;
-
-    const token = jwt.sign(user, process.env.JWT_SECRET!, { expiresIn: '14d' });
+    const token = signAuthToken(user);
     return done(null, { token });
   } catch (err) {
     return done(err);

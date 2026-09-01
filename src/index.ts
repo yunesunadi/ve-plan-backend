@@ -3,6 +3,7 @@ import { createServer } from "http";
 const app = express();
 const server = createServer(app);
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import mongoose from "mongoose";
@@ -44,6 +45,7 @@ const PREFIX = "/api/v1";
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(morgan("dev"));
+app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 

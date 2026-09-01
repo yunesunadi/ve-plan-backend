@@ -21,6 +21,10 @@ const UserSchema = new Schema({
     type: String,
     enum: ["organizer", "attendee"]
   },
+  tokenVersion: {
+    type: Number,
+    default: 0
+  },
   isVerified: {
     type: Boolean,
     default: false
