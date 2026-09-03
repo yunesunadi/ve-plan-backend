@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { isRequestInvalid, isEventExpired, bestEffort } from "../helpers/utils";
+import { pageMeta } from "../helpers/paging";
 import * as EventRegisterService from "../services/EventRegisterService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
@@ -133,12 +134,13 @@ export async function isRegisterApproved(req: any, res: Response) {
 
 export async function getAllByEventId(req: Request, res: Response) {
   try {
-    const registered_users = await EventRegisterService.getAllByEventId(req.params.id as string, req.query);
+    const { items, total, offset, limit } = await EventRegisterService.getAllByEventId(req.params.id as string, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch registered users successfully.",
-      data: registered_users
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);
@@ -169,12 +171,13 @@ export async function getAllApprovedByEventId(req: Request, res: Response) {
 
 export async function getAllByUserId(req: any, res: Response) {
   try {
-    const registered_events = await EventRegisterService.getAllByUserId(req.user._id);
+    const { items, total, offset, limit } = await EventRegisterService.getAllByUserId(req.user._id, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch registered events successfully.",
-      data: registered_events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);
@@ -187,12 +190,13 @@ export async function getAllByUserId(req: any, res: Response) {
 
 export async function getAllApprovedByUserId(req: any, res: Response) {
   try {
-    const registered_events = await EventRegisterService.getAllApprovedByUserId(req.user._id);
+    const { items, total, offset, limit } = await EventRegisterService.getAllApprovedByUserId(req.user._id, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch registered events successfully.",
-      data: registered_events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);

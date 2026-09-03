@@ -1,4 +1,5 @@
 import { objectId } from "../helpers/utils";
+import { parsePaging } from "../helpers/paging";
 
 const EventInviteModel = require("../models/EventInvite");
 
@@ -43,14 +44,28 @@ export function getAllAcceptedByEventId(id: string) {
   return EventInviteModel.find({ event, invitation_accepted: true }).populate("user", omitted_user_fields).populate("event");
 }
 
-export function getAllByUserId(id: string) {
-  const user = objectId(id);
-  return EventInviteModel.find({ user, invitation_accepted: false }).populate("user", omitted_user_fields).populate("event");
+export function getAllByUserId(id: string, query: any = {}) {
+  return getPagedByUser({ user: objectId(id), invitation_accepted: false }, query);
 }
 
-export function getAllAcceptedByUserId(id: string) {
-  const user = objectId(id);
-  return EventInviteModel.find({ user, invitation_accepted: true }).populate("user", omitted_user_fields).populate("event");
+export function getAllAcceptedByUserId(id: string, query: any = {}) {
+  return getPagedByUser({ user: objectId(id), invitation_accepted: true }, query);
+}
+
+async function getPagedByUser(base: any, query: any) {
+  const { offset, limit } = parsePaging(query, { defaultLimit: 20 });
+
+  const [page, total] = await Promise.all([
+    EventInviteModel.find(base)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit)
+      .populate("user", omitted_user_fields)
+      .populate("event"),
+    EventInviteModel.countDocuments(base),
+  ]);
+
+  return { items: page.filter((r: any) => r.event), total, offset, limit };
 }
 
 export function acceptInvite(user_id: string, event_id: string) {

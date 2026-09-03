@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { isRequestInvalid, joinWindowState } from "../helpers/utils";
+import { pageMeta } from "../helpers/paging";
 import * as ParticipantService from "../services/ParticipantService";
 import * as MeetingService from "../services/MeetingService";
 import * as EventRegisterService from "../services/EventRegisterService";
@@ -202,12 +203,13 @@ export async function updateNoEndTime(req: any, res: Response) {
 
 export async function getAll(req: any, res: Response) {
   try {
-    const participants = await ParticipantService.getAll(req.params.id);
+    const { items, total, offset, limit } = await ParticipantService.getPage(req.params.id, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch participant successfully.",
-      data: participants
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
     console.log("err", err);

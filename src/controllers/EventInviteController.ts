@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { isRequestInvalid, isEventExpired, bestEffort } from "../helpers/utils";
+import { pageMeta } from "../helpers/paging";
 import * as EventInviteService from "../services/EventInviteService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
@@ -119,12 +120,13 @@ export async function getAllAcceptedByEventId(req: Request, res: Response) {
 
 export async function getAllByUserId(req: any, res: Response) {
   try {
-    const invited_events = await EventInviteService.getAllByUserId(req.user._id);
+    const { items, total, offset, limit } = await EventInviteService.getAllByUserId(req.user._id, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch invited events successfully.",
-      data: invited_events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);
@@ -137,12 +139,13 @@ export async function getAllByUserId(req: any, res: Response) {
 
 export async function getAllAcceptedByUserId(req: any, res: Response) {
   try {
-    const invite_accepted_events = await EventInviteService.getAllAcceptedByUserId(req.user._id);
+    const { items, total, offset, limit } = await EventInviteService.getAllAcceptedByUserId(req.user._id, req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch invitation accepted events successfully.",
-      data: invite_accepted_events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);

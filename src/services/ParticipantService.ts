@@ -1,4 +1,5 @@
 import { objectId } from "../helpers/utils";
+import { parsePaging } from "../helpers/paging";
 
 const ParticipantModel = require("../models/Participant");
 const MeetingModel = require("../models/Meeting");
@@ -24,6 +25,22 @@ export function getAll(event_id: string) {
   return ParticipantModel.find({ event })
     .populate("user", omitted_user_fields)
     .sort({ start_time: 1, _id: 1 });
+}
+
+export async function getPage(event_id: string, query: any = {}) {
+  const event = objectId(event_id);
+  const { offset, limit } = parsePaging(query, { defaultLimit: 20 });
+
+  const [items, total] = await Promise.all([
+    ParticipantModel.find({ event })
+      .sort({ start_time: 1, _id: 1 })
+      .skip(offset)
+      .limit(limit)
+      .populate("user", omitted_user_fields),
+    ParticipantModel.countDocuments({ event }),
+  ]);
+
+  return { items, total, offset, limit };
 }
 
 export function getAllWithNoEndTime(event_id: string) {

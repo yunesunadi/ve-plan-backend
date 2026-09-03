@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { objectId, escapeRegExp } from "../helpers/utils";
+import { parsePaging } from "../helpers/paging";
 import { deriveInstants, resolveTimezone, DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 import * as EventRegisterService from "./EventRegisterService";
 import * as EventInviteService from "./EventInviteService";
@@ -48,7 +49,7 @@ const getQuery = (...query: any) => {
   };
 }
 
-export function getAllByQuery(query: any) {
+export async function getAllByQuery(query: any) {
   let time_query = {}, category_query = {}, search_query = {}, date_query = {};
   const now = new Date();
   let filter: any = { type: "public" };
@@ -88,20 +89,21 @@ export function getAllByQuery(query: any) {
     filter = getQuery(search_query, time_query, category_query, date_query);
   }
 
-  let result = EventModel.find(filter).sort({ createdAt: -1, _id: -1 });
+  const { offset, limit } = parsePaging(query, { defaultLimit: 5 });
 
-  if (query.offset) {
-    result = result.skip(query.offset);
-  }
+  const [items, total] = await Promise.all([
+    EventModel.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit)
+      .populate("user", omitted_user_fields),
+    EventModel.countDocuments(filter),
+  ]);
 
-  if (query.limit) {
-    result = result.limit(query.limit);
-  }
-
-  return result.populate("user", omitted_user_fields);
+  return { items, total, offset, limit };
 }
 
-export function getMyEvents(query: any, user_id: string) {
+export async function getMyEvents(query: any, user_id: string) {
   let type_query = {};
 
   if (query.type) {
@@ -120,17 +122,18 @@ export function getMyEvents(query: any, user_id: string) {
 
   const qry = { ...type_query, user: objectId(user_id) };
 
-  let result = EventModel.find(qry).sort({ createdAt: -1, _id: -1 });
+  const { offset, limit } = parsePaging(query, { defaultLimit: 5 });
 
-  if (query.offset) {
-    result = result.skip(query.offset);
-  }
+  const [items, total] = await Promise.all([
+    EventModel.find(qry)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip(offset)
+      .limit(limit)
+      .populate("user", omitted_user_fields),
+    EventModel.countDocuments(qry),
+  ]);
 
-  if (query.limit) {
-    result = result.limit(query.limit);
-  }
-
-  return result.populate("user", omitted_user_fields);
+  return { items, total, offset, limit };
 }
 
 export function getOneById(id: string) {

@@ -1,6 +1,7 @@
 import { Response } from "express";
 import mongoose from "mongoose";
 import { isRequestInvalid, bestEffort } from "../helpers/utils";
+import { pageMeta } from "../helpers/paging";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { endNotAfterStart } from "../helpers/time";
 import { deriveInstants, resolveTimezone } from "../helpers/eventTime";
@@ -111,12 +112,13 @@ export async function getAll(req: any, res: Response) {
 
 export async function getAllByQuery(req: any, res: Response) {
   try {
-    const events = await EventService.getAllByQuery(req.query);
+    const { items, total, offset, limit } = await EventService.getAllByQuery(req.query);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch events successfully.",
-      data: events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);
@@ -129,12 +131,13 @@ export async function getAllByQuery(req: any, res: Response) {
 
 export async function getMyEvents(req: any, res: Response) {
   try {
-    const events = await EventService.getMyEvents(req.query, req.user._id);
+    const { items, total, offset, limit } = await EventService.getMyEvents(req.query, req.user._id);
 
     return res.status(200).json({
       status: "success",
       message: "Fetch events successfully.",
-      data: events
+      data: items,
+      meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
      console.log("err", err);
