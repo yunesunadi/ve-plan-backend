@@ -2,6 +2,7 @@ import express from "express";
 import { body } from "express-validator";
 import { imageUpload } from "../helpers/uploads";
 import { sensitiveActionLimiter } from "../middlewares/rateLimit";
+import { PASSWORD_MIN_LENGTH, isCommonPassword } from "../helpers/password";
 const router = express.Router();
 const UserController = require("../controllers/UserController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -15,7 +16,8 @@ const edit_profile_validation = [
 const update_password_validation = [
   body("current_password", "Current password is required.").notEmpty(),
   body("new_password", "New password is required.").notEmpty().bail()
-    .isLength({ min: 6 }).withMessage("New password must be at least 6 characters."),
+    .isLength({ min: PASSWORD_MIN_LENGTH }).withMessage("New password must be at least 8 characters.").bail()
+    .custom((v) => !isCommonPassword(v)).withMessage("This password is too common. Please choose a stronger one."),
 ];
 
 const delete_account_validation = [

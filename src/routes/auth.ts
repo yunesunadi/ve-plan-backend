@@ -4,6 +4,7 @@ import { body } from "express-validator";
 import passport from "passport";
 import { imageUpload } from "../helpers/uploads";
 import { authLimiter, passwordResetLimiter } from "../middlewares/rateLimit";
+import { PASSWORD_MIN_LENGTH, isCommonPassword } from "../helpers/password";
 const router = express.Router();
 const AuthController = require("../controllers/AuthController");
 const jwtAuth = require("../middlewares/jwtAuth");
@@ -12,8 +13,9 @@ const register_validation = [
   body("name", "Name is required.").notEmpty(),
   body("email", "Email is required.").notEmpty(),
   body("email", "Invalid email.").isEmail(),
-  body("password", "Password is required.").notEmpty(),
-  body("password", "Password must be at least 6 characters.").isLength({ min: 6 }),
+  body("password", "Password is required.").notEmpty().bail()
+    .isLength({ min: PASSWORD_MIN_LENGTH }).withMessage("Password must be at least 8 characters.").bail()
+    .custom((v) => !isCommonPassword(v)).withMessage("This password is too common. Please choose a stronger one."),
 ];
 
 const login_validation = [
@@ -32,8 +34,9 @@ const forgot_password_validation = [
 ];
 
 const reset_password_validation = [
-  body("password", "Password is required.").notEmpty(),
-  body("password", "Password must be at least 6 characters.").isLength({ min: 6 }),
+  body("password", "Password is required.").notEmpty().bail()
+    .isLength({ min: PASSWORD_MIN_LENGTH }).withMessage("Password must be at least 8 characters.").bail()
+    .custom((v) => !isCommonPassword(v)).withMessage("This password is too common. Please choose a stronger one."),
 ];
 
 const facebook_token_validation = [
