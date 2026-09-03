@@ -4,6 +4,7 @@ import { parsePaging } from "../helpers/paging";
 import { deriveInstants, resolveTimezone, DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 import * as EventRegisterService from "./EventRegisterService";
 import * as EventInviteService from "./EventInviteService";
+import * as MeetingService from "./MeetingService";
 
 const EventModel = require("../models/Event");
 
@@ -152,6 +153,29 @@ export async function canUserView(event: any, user_id: string): Promise<boolean>
   if (registered) return true;
   if (invited && !isEventExpired(event)) return true;
   return false;
+}
+
+export async function getParticipation(event: any, user: { _id: string; role: string }) {
+  if (user.role !== "attendee") return null;
+
+  const event_id = event._id.toString();
+  const [register, invite, meeting] = await Promise.all([
+    EventRegisterService.getHasRegistered(event_id, user._id),
+    EventInviteService.getHasInvited(event_id, user._id),
+    MeetingService.getOneByEventId(event_id),
+  ]);
+
+  let state: string;
+  if (invite) state = invite.invitation_accepted ? "invitation_accepted" : "invited";
+  else if (register) state = register.register_approved ? "registration_approved" : "registered";
+  else state = "none";
+
+  const meeting_started = Boolean(
+    meeting && !meeting.ended &&
+    ((register && register.meeting_started) || (invite && invite.meeting_started))
+  );
+
+  return { state, meeting_started };
 }
 
 export function update(id: string, event: any) {

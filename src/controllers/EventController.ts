@@ -173,10 +173,12 @@ export async function getOneById(req: any, res: Response) {
       });
     }
 
+    const participation = await EventService.getParticipation(event, req.user);
+
     return res.status(200).json({
       status: "success",
       message: "Fetch event successfully.",
-      data: event
+      data: { ...event.toObject(), participation }
     });
   } catch (err: any) {
      console.log("err", err);
