@@ -106,7 +106,7 @@ export function findManyByIds(ids: string[]) {
   const objectIds = ids
     .filter((id) => mongoose.isValidObjectId(id))
     .map((id) => objectId(id));
-  return UserModel.find({ _id: { $in: objectIds } }).select("name email profile role").lean();
+  return UserModel.find({ _id: { $in: objectIds } }).select("name email profile role isVerified").lean();
 }
 
 export async function ownsEventWithLiveMeeting(id: string): Promise<boolean> {

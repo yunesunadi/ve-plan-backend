@@ -73,13 +73,19 @@ async function cascadeEventDeletes(this: any, next: (err?: any) => void) {
     const ids = events.map((event: any) => event._id);
 
     if (ids.length > 0) {
-      await Promise.all([
+      const results = await Promise.allSettled([
         mongoose.model("Session").deleteMany({ event: { $in: ids } }),
         mongoose.model("EventRegister").deleteMany({ event: { $in: ids } }),
         mongoose.model("EventInvite").deleteMany({ event: { $in: ids } }),
         mongoose.model("Meeting").deleteMany({ event: { $in: ids } }),
         mongoose.model("Participant").deleteMany({ event: { $in: ids } }),
       ]);
+
+      for (const result of results) {
+        if (result.status === "rejected") {
+          console.log("event cascade: a delete leg failed (sweep will reconcile)", result.reason);
+        }
+      }
     }
 
     next();

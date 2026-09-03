@@ -36,42 +36,63 @@ export async function invite(req: any, res: Response) {
       });
     }
 
+    const users = await UserService.findManyByIds(user_id_list);
+    const usersById = new Map(users.map((u: any) => [u._id.toString(), u]));
+
+    const unknownIds = user_id_list.filter((id: string) => !usersById.has(id));
+    const wrongRole = users.filter((u: any) => u.role !== "attendee" || !u.isVerified);
+
+    if (unknownIds.length > 0 || wrongRole.length > 0) {
+      const bad = [
+        ...wrongRole.map((u: any) => u.name),
+        ...unknownIds,
+      ].join(", ");
+      return res.status(400).json({
+        status: "error",
+        message: `Some selected users can't be invited: ${bad}`,
+      });
+    }
+
     const existing = await EventInviteService.getOneByEventAndUserId(event_id, user_id_list);
+    const existingIds = new Set<string>(existing.map((item: any) => item.user._id.toString()));
+    const toInvite = user_id_list.filter((id: string) => !existingIds.has(id));
 
-    const already_invited_users = await Promise.all(existing.map(async (item: any) => {
-      return await UserService.findById(item.user);
-    }));
+    if (toInvite.length > 0) {
+      const invite = await EventInviteService.invite(toInvite, event_id);
 
-    if (already_invited_users.length > 0) {
-      return res.status(409).json({
-        status: "error",
-        message: `Already invited users: ${already_invited_users.map((item: any) => item.name).join(", ")}`,
+      if (!invite) {
+        return res.status(500).json({
+          status: "error",
+          message: "Error inviting event.",
+        });
+      }
+
+      await bestEffort("invitation_sent emails", async () => {
+        await EmailService.sendBatch(toInvite.map((id: string) => {
+          const user: any = usersById.get(id);
+          return {
+            action: "invitation_sent",
+            recipient: user.email,
+            additional: { name: user.name, event_title: event.title },
+          };
+        }));
       });
+
+      await bestEffort("invitation notifications", () => NotificationService.sendInvitation(toInvite, event));
     }
 
-    const invite = await EventInviteService.invite(user_id_list, event_id);
-
-    if (!invite) {
-      return res.status(500).json({
-        status: "error",
-        message: "Error inviting event.",
-      });
-    }
-
-    await bestEffort("invitation_sent emails", async () => {
-      const users = await UserService.findManyByIds(user_id_list);
-      await EmailService.sendBatch(users.map((user: any) => ({
-        action: "invitation_sent",
-        recipient: user.email,
-        additional: { name: user.name, event_title: event.title },
-      })));
+    const summary = (ids: string[]) => ids.map((id: string) => {
+      const user: any = usersById.get(id);
+      return { _id: id, name: user?.name };
     });
 
-    await bestEffort("invitation notifications", () => NotificationService.sendInvitation(user_id_list, event));
-
-    return res.status(201).json({
+    return res.status(200).json({
       status: "success",
-      message: "Invite event successfully.",
+      message: "Invitations processed.",
+      data: {
+        invited: summary(toInvite),
+        skipped: summary([...existingIds]),
+      },
     });
   } catch (err: any) {
     console.log("err", err);
@@ -158,14 +179,41 @@ export async function getAllAcceptedByUserId(req: any, res: Response) {
 
 export async function acceptInvite(req: any, res: Response) {
   try {
-    const invite_accepted = await EventInviteService.acceptInvite(req.user._id, req.body.event_id);
+    if (isRequestInvalid(req, res)) return;
 
-    if (!invite_accepted) {
-      return res.status(500).json({
+    const event = await EventService.getOneById(req.body.event_id);
+
+    if (!event) {
+      return res.status(404).json({
         status: "error",
-        message: "Failed to accept invitation.",
+        message: "Event not found.",
       });
     }
+
+    const invite = await EventInviteService.getHasInvited(req.body.event_id, req.user._id);
+
+    if (!invite) {
+      return res.status(404).json({
+        status: "error",
+        message: "You have no invitation for this event.",
+      });
+    }
+
+    if (isEventExpired(event)) {
+      return res.status(400).json({
+        status: "error",
+        message: "This event has already ended.",
+      });
+    }
+
+    if (invite.invitation_accepted) {
+      return res.status(200).json({
+        status: "success",
+        message: "Invitation already accepted.",
+      });
+    }
+
+    await EventInviteService.acceptInvite(req.user._id, req.body.event_id);
 
     return res.status(200).json({
       status: "success",

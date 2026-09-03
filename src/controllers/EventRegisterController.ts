@@ -5,6 +5,8 @@ import * as EventRegisterService from "../services/EventRegisterService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 import * as EventService from "../services/EventService";
+import * as EventInviteService from "../services/EventInviteService";
+import * as MeetingService from "../services/MeetingService";
 import * as UserService from "../services/UserService";
 
 export async function register(req: any, res: Response) {
@@ -25,6 +27,16 @@ export async function register(req: any, res: Response) {
         status: "error",
         message: "This event has already ended and can no longer be registered for.",
       });
+    }
+
+    if (event.type === "private") {
+      const invited = await EventInviteService.getHasInvited(event._id.toString(), req.user._id);
+      if (!invited) {
+        return res.status(403).json({
+          status: "error",
+          message: "This is a private event. You need an invitation to register.",
+        });
+      }
     }
 
     const register = await EventRegisterService.register({
@@ -56,6 +68,23 @@ export async function unregister(req: any, res: Response) {
   try {
     if(isRequestInvalid(req, res)) return;
 
+    const registration = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
+
+    if (!registration) {
+      return res.status(404).json({
+        status: "error",
+        message: "You are not registered for this event.",
+      });
+    }
+
+    const meeting = await MeetingService.getOneByEventId(req.params.id);
+    if (meeting && !meeting.ended) {
+      return res.status(409).json({
+        status: "error",
+        message: "You can't leave this event while its meeting is live. Please wait until it ends.",
+      });
+    }
+
     const result = await EventRegisterService.unregister({
       event: req.params.id,
       user: req.user._id
@@ -66,6 +95,13 @@ export async function unregister(req: any, res: Response) {
         status: "error",
         message: "You are not registered for this event.",
       });
+    }
+
+    if (registration.register_approved) {
+      await bestEffort(
+        "attendee unregistered notification",
+        () => NotificationService.sendAttendeeUnregistered(registration.event, req.user)
+      );
     }
 
     return res.status(200).json({

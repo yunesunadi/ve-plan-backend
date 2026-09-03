@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { objectId, escapeRegExp } from "../helpers/utils";
+import { objectId, escapeRegExp, isEventExpired } from "../helpers/utils";
 import { parsePaging } from "../helpers/paging";
 import { deriveInstants, resolveTimezone, DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 import * as EventRegisterService from "./EventRegisterService";
@@ -149,7 +149,9 @@ export async function canUserView(event: any, user_id: string): Promise<boolean>
     EventRegisterService.getHasRegistered(event._id.toString(), user_id),
     EventInviteService.getHasInvited(event._id.toString(), user_id),
   ]);
-  return Boolean(registered || invited);
+  if (registered) return true;
+  if (invited && !isEventExpired(event)) return true;
+  return false;
 }
 
 export function update(id: string, event: any) {

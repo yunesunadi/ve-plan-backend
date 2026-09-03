@@ -8,13 +8,16 @@ const attendeeAuth = require("../middlewares/attendeeAuth");
 const eventOwnerAuth = require("../middlewares/eventOwnerAuth");
 
 const invite_validation = [
-  body("user_id_list", "User ID list is required.").notEmpty(),
-  body("user_id_list").isArray(),
-  body("event_id", "Event ID is required.").notEmpty(),
+  body("user_id_list").isArray({ min: 1, max: 200 })
+    .withMessage("Select between 1 and 200 attendees to invite."),
+  body("user_id_list.*").isMongoId().withMessage("Invalid user id in list."),
+  body("event_id", "Event ID is required.").notEmpty().bail()
+    .isMongoId().withMessage("Invalid event id."),
 ];
 
 const accept_validation = [
-  body("event_id", "Event ID is required.").notEmpty(),
+  body("event_id", "Event ID is required.").notEmpty().bail()
+    .isMongoId().withMessage("Invalid event id."),
 ];
 
 const start_meeting_validation = [

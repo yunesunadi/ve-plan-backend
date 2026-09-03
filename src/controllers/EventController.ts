@@ -282,6 +282,14 @@ export async function update(req: any, res: Response) {
 
 export async function deleteOne(req: any, res: Response) {
   try {
+    const meeting = await MeetingService.getOneByEventId(req.params.id as string);
+    if (meeting && !meeting.ended) {
+      return res.status(409).json({
+        status: "error",
+        message: "End the meeting before deleting this event."
+      });
+    }
+
     const deleted = await EventService.deleteOne(req.params.id as string);
 
     if (!deleted) {

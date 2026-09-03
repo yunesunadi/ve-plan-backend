@@ -114,6 +114,18 @@ export const sendInvitation = async (user_id_list: string[], event: any) => {
   }));
 };
 
+export const sendAttendeeUnregistered = async (event: any, attendee: any) => {
+  const organizerId = (event.user?._id ?? event.user)?.toString();
+  if (!organizerId) return null;
+  return createNotification({
+    recipient: organizerId,
+    sender: event._id?.toString(),
+    type: "attendee_unregistered",
+    title: "Attendee left",
+    message: `${attendee.name} has unregistered from your event "${event.title}".`
+  });
+};
+
 export const sendMeetingStarted = async (user_id_list: string[], event: any) => {
   await fanOut(user_id_list, (recipient) => ({
     recipient,

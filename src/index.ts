@@ -24,6 +24,7 @@ import { assertEnv, corsOrigin } from "./libs/env";
 import { assertTemplates } from "./services/EmailService";
 import { bestEffort } from "./helpers/utils";
 import * as ParticipantService from "./services/ParticipantService";
+import { sweepOrphans } from "./helpers/reconcile";
 assertEnv();
 assertTemplates();
 
@@ -94,6 +95,11 @@ const runParticipantSweep = () =>
   bestEffort("participant-sweep", () => ParticipantService.closeDanglingForEndedMeetings());
 setTimeout(runParticipantSweep, 60 * 1000).unref();
 setInterval(runParticipantSweep, PARTICIPANT_SWEEP_INTERVAL_MS).unref();
+
+const ORPHAN_SWEEP_INTERVAL_MS = 30 * 60 * 1000;
+const runOrphanSweep = () => bestEffort("orphan-sweep", () => sweepOrphans());
+setTimeout(runOrphanSweep, 90 * 1000).unref();
+setInterval(runOrphanSweep, ORPHAN_SWEEP_INTERVAL_MS).unref();
 
 server.listen(PORT, () => {
   console.log(`Server is listening at port ${PORT}...`);
