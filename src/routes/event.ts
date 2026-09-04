@@ -39,5 +39,7 @@ router.get("/:id", jwtAuth, EventController.getOneById);
 router.get("/:id/sessions", objectIdParam("id", "event"), handleValidation, jwtAuth, SessionController.getForEvent);
 router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, eventOwnerAuth, EventController.update);
 router.delete("/:id", jwtAuth, organizerAuth, eventOwnerAuth, EventController.deleteOne);
+router.get("/:id/email_status", jwtAuth, organizerAuth, eventOwnerAuth, EventController.getEmailStatus);
+router.post("/:id/email_retry", jwtAuth, organizerAuth, eventOwnerAuth, EventController.retryEmails);
 
 export default router;

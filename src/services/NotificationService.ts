@@ -1,4 +1,5 @@
 import { objectId } from "../helpers/utils";
+import { logger } from "../helpers/logger";
 import * as SocketService from "../libs/socket";
 const NotificationModel = require("../models/Notification");
 import * as UserService from "./UserService";
@@ -25,7 +26,7 @@ export const createNotification = async (notificationData: CreateNotificationDat
     SocketService.sendToUser(notificationData.recipient, "notification", notification);
     return notification;
   } catch (error) {
-    console.error("Error creating notification:", error);
+    logger.error({ err: error }, "failed to create notification");
     return null;
   }
 };
@@ -42,7 +43,7 @@ async function fanOut(
       );
     }
   } catch (error) {
-    console.error("Error creating notifications:", error);
+    logger.error({ err: error }, "failed to create notifications");
   }
 }
 

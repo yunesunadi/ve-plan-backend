@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { DEFAULT_EVENT_TZ } from "../helpers/eventTime";
+import { logger } from "../helpers/logger";
 
 const EventSchema = new Schema({
   cover: {
@@ -83,7 +84,10 @@ async function cascadeEventDeletes(this: any, next: (err?: any) => void) {
 
       for (const result of results) {
         if (result.status === "rejected") {
-          console.log("event cascade: a delete leg failed (sweep will reconcile)", result.reason);
+          logger.error(
+            { err: result.reason },
+            "event cascade: a delete leg failed (sweep will reconcile)"
+          );
         }
       }
     }

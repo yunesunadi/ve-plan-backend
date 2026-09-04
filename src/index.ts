@@ -5,7 +5,6 @@ const server = createServer(app);
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
-import morgan from "morgan";
 import mongoose from "mongoose";
 import path from "path";
 import authRouter from "./routes/auth";
@@ -21,12 +20,14 @@ import notificationRouter from "./routes/notification";
 require("dotenv").config();
 
 import { assertEnv, corsOrigin } from "./libs/env";
-import { assertTemplates } from "./services/EmailService";
+import * as EmailService from "./services/EmailService";
 import { bestEffort } from "./helpers/utils";
+import logger from "./helpers/logger";
+import requestLogger from "./middlewares/requestLogger";
 import * as ParticipantService from "./services/ParticipantService";
 import { sweepOrphans } from "./helpers/reconcile";
 assertEnv();
-assertTemplates();
+EmailService.assertTemplates();
 
 require("./libs/connectdb");
 require("./libs/passport");
@@ -45,7 +46,7 @@ const PREFIX = "/api/v1";
 
 app.use(helmet());
 app.use(cors(corsOptions));
-app.use(morgan("dev"));
+app.use(requestLogger);
 app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: false, limit: "100kb" }));
@@ -85,9 +86,13 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ status: "error", message: "Page not found." });
 });
 
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.log("err", err);
-  res.status(500).json({ status: "error", message: "Something went wrong." });
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  ((req as any).log ?? logger).error({ err }, "unhandled error");
+  res.status(500).json({
+    status: "error",
+    message: "Something went wrong.",
+    data: { requestId: (req as any).id },
+  });
 });
 
 const PARTICIPANT_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
@@ -101,6 +106,11 @@ const runOrphanSweep = () => bestEffort("orphan-sweep", () => sweepOrphans());
 setTimeout(runOrphanSweep, 90 * 1000).unref();
 setInterval(runOrphanSweep, ORPHAN_SWEEP_INTERVAL_MS).unref();
 
+const EMAIL_RETRY_SWEEP_INTERVAL_MS = 5 * 60 * 1000;
+const runEmailRetrySweep = () => bestEffort("email-retry-sweep", () => EmailService.retrySweep());
+setTimeout(runEmailRetrySweep, 120 * 1000).unref();
+setInterval(runEmailRetrySweep, EMAIL_RETRY_SWEEP_INTERVAL_MS).unref();
+
 server.listen(PORT, () => {
-  console.log(`Server is listening at port ${PORT}...`);
+  logger.info({ port: PORT }, "server listening");
 });

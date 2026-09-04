@@ -2,6 +2,7 @@ import * as nodemailer from "nodemailer";
 import * as fs from "fs";
 import * as path from "path";
 import { escapeHtml } from "../helpers/utils";
+import { logger } from "../helpers/logger";
 
 require("dotenv").config();
 
@@ -18,6 +19,14 @@ const KNOWN_ACTIONS = [
 
 const RETRYABLE_CODES = ["ETIMEDOUT", "ECONNECTION", "ESOCKET", "EAUTH", "EENVELOPE", "ECONNRESET"];
 const MAX_ATTEMPTS = 3;
+
+// retrySweep timings / caps
+const STUCK_MS = 10 * 60 * 1000; // pending rows older than this are treated as restart orphans
+const RETRY_COOLDOWN_MS = 5 * 60 * 1000; // min gap before re-attempting a retryable failure
+const MAX_AGE_MS = 24 * 60 * 60 * 1000; // stop auto-retrying a failure once it is older than this
+const SWEEP_ATTEMPT_CEIL = 6; // cumulative-attempt ceiling for auto-retry
+const SWEEP_BATCH = 50; // max rows requeued per sweep run
+const REQUEUE_BATCH = 200; // max rows re-delivered per organizer-triggered event retry
 
 let transporter: nodemailer.Transporter | null = null;
 
@@ -74,10 +83,10 @@ export function assertTemplates() {
 
   const msg = `Missing email templates: ${missing.join(", ")}`;
   if (process.env.NODE_ENV === "production") {
-    console.error(msg);
+    logger.error(msg);
     process.exit(1);
   }
-  console.warn(msg + " (run `npm run build` to copy them into dist/)");
+  logger.warn(msg + " (run `npm run build` to copy them into dist/)");
 }
 
 function isRetryable(err: any): boolean {
@@ -86,35 +95,7 @@ function isRetryable(err: any): boolean {
   return typeof status === "number" && status >= 400 && status < 500;
 }
 
-const saveLog = (log: any) => log.save().catch((e: any) => console.error("EmailLog save failed:", e?.message ?? e));
-
-async function deliver(mailOptions: nodemailer.SendMailOptions, log: any) {
-  try {
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-      try {
-        await getTransporter().sendMail(mailOptions);
-        log.status = "sent";
-        log.attempts = attempt;
-        log.sentAt = new Date();
-        await saveLog(log);
-        return;
-      } catch (error: any) {
-        log.attempts = attempt;
-        log.lastError = String(error?.message ?? error);
-        if (!isRetryable(error) || attempt === MAX_ATTEMPTS) {
-          log.status = "failed";
-          await saveLog(log);
-          console.error(`Email to ${log.to} (${log.action}) failed after ${attempt} attempt(s):`, error?.message ?? error);
-          return;
-        }
-        // exponential backoff with jitter
-        await sleep(500 * 2 ** (attempt - 1) + Math.floor(Math.random() * 250));
-      }
-    }
-  } catch (fatal: any) {
-    console.error("Email deliver crashed:", fatal?.message ?? fatal);
-  }
-}
+const saveLog = (log: any) => log.save().catch((e: any) => logger.error({ err: e }, "EmailLog save failed"));
 
 const subjectFor = (action: string): string | undefined => ({
   email_verified: "Email Verification",
@@ -125,52 +106,103 @@ const subjectFor = (action: string): string | undefined => ({
   meeting_ended: "Meeting Ended",
 }[action]);
 
-export const send = async (obj: { action: string; recipient: string; additional: any }) => {
-  const subject = subjectFor(obj.action);
-
-  const html = renderTemplate(obj.action, {
-    name: obj.additional?.name,
-    event_title: obj.additional?.event_title,
-    link: obj.additional?.link,
+export function renderMail(action: string, meta: any): { subject: string | undefined; html: string } {
+  const subject = subjectFor(action);
+  const html = renderTemplate(action, {
+    name: meta?.name,
+    event_title: meta?.event_title,
+    link: meta?.link,
   });
+  return { subject, html };
+}
+
+async function deliver(log: any) {
+  try {
+    let mailOptions: nodemailer.SendMailOptions;
+    try {
+      const { subject, html } = renderMail(log.action, log.meta);
+      mailOptions = {
+        to: log.to,
+        from: log.from,
+        subject: log.subject ?? subject,
+        html,
+      };
+    } catch (renderError: any) {
+      log.status = "failed";
+      log.retryable = false;
+      log.lastError = String(renderError?.message ?? renderError);
+      await saveLog(log);
+      logger.error({ err: renderError, to: log.to, action: log.action }, "email could not be rendered");
+      return;
+    }
+
+    const priorAttempts = log.attempts ?? 0;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        await getTransporter().sendMail(mailOptions);
+        log.status = "sent";
+        log.attempts = priorAttempts + attempt;
+        log.retryable = false;
+        log.sentAt = new Date();
+        await saveLog(log);
+        return;
+      } catch (error: any) {
+        log.attempts = priorAttempts + attempt;
+        log.lastError = String(error?.message ?? error);
+        if (!isRetryable(error) || attempt === MAX_ATTEMPTS) {
+          log.status = "failed";
+          log.retryable = isRetryable(error);
+          await saveLog(log);
+          logger.error({ err: error, to: log.to, action: log.action, attempts: log.attempts }, "email delivery failed");
+          return;
+        }
+        // exponential backoff with jitter
+        await sleep(500 * 2 ** (attempt - 1) + Math.floor(Math.random() * 250));
+      }
+    }
+  } catch (fatal: any) {
+    logger.error({ err: fatal }, "email deliver crashed");
+  }
+}
+
+const metaFor = (additional: any) => ({
+  name: additional?.name,
+  event_title: additional?.event_title,
+  link: additional?.link,
+});
+
+export const send = async (obj: { action: string; recipient: string; additional: any }) => {
+  const meta = metaFor(obj.additional);
+  const { subject } = renderMail(obj.action, meta);
 
   const log = await EmailLog.create({
     to: obj.recipient,
     action: obj.action,
     subject,
+    from: process.env.SENDER,
+    meta,
     status: "pending",
   });
 
-  const mailOptions: nodemailer.SendMailOptions = {
-    to: obj.recipient,
-    from: process.env.SENDER,
-    subject,
-    html,
-  };
-
-  // Fire-and-forget; `deliver` owns its own error handling and updates the log.
-  void deliver(mailOptions, log);
+  void deliver(log);
 };
 
 export const sendBatch = async (
-  items: { action: string; recipient: string; additional: any }[]
+  items: { action: string; recipient: string; additional: any }[],
+  opts?: { event?: string }
 ) => {
   if (items.length === 0) return;
 
   const prepared = items.map((item) => {
+    const meta = metaFor(item.additional);
     const subject = subjectFor(item.action);
-    let html: string | null = null;
     let renderError: string | null = null;
     try {
-      html = renderTemplate(item.action, {
-        name: item.additional?.name,
-        event_title: item.additional?.event_title,
-        link: item.additional?.link,
-      });
+      renderMail(item.action, meta);
     } catch (err: any) {
       renderError = String(err?.message ?? err);
     }
-    return { item, subject, html, renderError };
+    return { item, meta, subject, renderError };
   });
 
   const logs = await EmailLog.insertMany(
@@ -178,6 +210,9 @@ export const sendBatch = async (
       to: p.item.recipient,
       action: p.item.action,
       subject: p.subject,
+      from: process.env.SENDER,
+      meta: p.meta,
+      ...(opts?.event ? { event: opts.event } : {}),
       status: p.renderError ? "failed" : "pending",
       attempts: 0,
       lastError: p.renderError ?? undefined,
@@ -185,17 +220,69 @@ export const sendBatch = async (
   );
 
   prepared.forEach((p, i) => {
-    if (p.renderError || !p.html) return;
-    const mailOptions: nodemailer.SendMailOptions = {
-      to: p.item.recipient,
-      from: process.env.SENDER,
-      subject: p.subject,
-      html: p.html,
-    };
-    void deliver(mailOptions, logs[i]);
+    if (p.renderError) return;
+    void deliver(logs[i]);
   });
 };
 
-export const countRecentFailures = async (action: string, since: Date): Promise<number> => {
-  return EmailLog.countDocuments({ action, status: "failed", createdAt: { $gte: since } });
-};
+export async function retrySweep(): Promise<void> {
+  const now = Date.now();
+
+  const rows = await EmailLog.find({
+    $or: [
+      {
+        status: "pending",
+        updatedAt: { $lt: new Date(now - STUCK_MS) },
+      },
+      {
+        status: "failed",
+        retryable: true,
+        attempts: { $lt: SWEEP_ATTEMPT_CEIL },
+        updatedAt: { $lt: new Date(now - RETRY_COOLDOWN_MS) },
+        createdAt: { $gt: new Date(now - MAX_AGE_MS) },
+      },
+    ],
+  }).limit(SWEEP_BATCH);
+
+  if (rows.length === 0) return;
+
+  logger.info({ count: rows.length }, "email retry sweep: requeuing emails");
+
+  for (const row of rows) {
+    row.status = "pending";
+    await row.save();
+    void deliver(row);
+  }
+}
+
+export async function statusForEvent(
+  eventId: string
+): Promise<{ sent: number; pending: number; failed: number; retryableFailed: number }> {
+  const [sent, pending, failed, retryableFailed] = await Promise.all([
+    EmailLog.countDocuments({ event: eventId, status: "sent" }),
+    EmailLog.countDocuments({ event: eventId, status: "pending" }),
+    EmailLog.countDocuments({ event: eventId, status: "failed" }),
+    EmailLog.countDocuments({ event: eventId, status: "failed", retryable: true }),
+  ]);
+
+  return { sent, pending, failed, retryableFailed };
+}
+
+export async function requeueFailedForEvent(eventId: string): Promise<number> {
+  const failed = await EmailLog.find(
+    { event: eventId, status: "failed", retryable: true },
+    { _id: 1 }
+  ).limit(REQUEUE_BATCH);
+
+  if (failed.length === 0) return 0;
+
+  const ids = failed.map((row: any) => row._id);
+  const result = await EmailLog.updateMany({ _id: { $in: ids } }, { $set: { status: "pending" } });
+
+  const rows = await EmailLog.find({ _id: { $in: ids } });
+  for (const row of rows) {
+    void deliver(row);
+  }
+
+  return result.modifiedCount ?? ids.length;
+}

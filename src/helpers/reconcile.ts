@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { logger } from "./logger";
 
 export async function sweepOrphans(): Promise<void> {
   const liveIds = await mongoose.model("Event").distinct("_id");
@@ -11,7 +12,10 @@ export async function sweepOrphans(): Promise<void> {
       .deleteMany({ event: { $nin: liveIds } });
 
     if (result.deletedCount && result.deletedCount > 0) {
-      console.log(`orphan sweep: removed ${result.deletedCount} ${name} row(s) with no parent event`);
+      logger.info(
+        { collection: name, removed: result.deletedCount },
+        "orphan sweep: removed rows with no parent event"
+      );
     }
   }
 }

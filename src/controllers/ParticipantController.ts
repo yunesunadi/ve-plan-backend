@@ -105,7 +105,7 @@ export async function create(req: any, res: Response) {
       message: "Create participant successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "ParticipantController.create failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -155,7 +155,7 @@ export async function update(req: any, res: Response) {
       message: "Update participant successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "ParticipantController.update failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -193,7 +193,7 @@ export async function updateNoEndTime(req: any, res: Response) {
       message: "Update participants successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "ParticipantController.updateNoEndTime failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -212,7 +212,7 @@ export async function getAll(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "ParticipantController.getAll failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -271,7 +271,7 @@ export async function getStayTimes(req: any, res: Response) {
       meta: { available: true },
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "ParticipantController.getStayTimes failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

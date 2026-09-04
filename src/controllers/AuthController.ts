@@ -104,7 +104,7 @@ export async function register(req: Request, res: Response) {
       message: "Register successfully. Please check your email to verify your account."
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.register failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -119,7 +119,7 @@ export async function login(req: Request, res: Response) {
     const email = req.body.email;
     const password = req.body.password;
 
-    let user = await UserService.findByEmail(email);
+    const user = await UserService.findByEmail(email);
 
     if (!user) {
       await dummyCompare(password);
@@ -155,7 +155,7 @@ export async function login(req: Request, res: Response) {
       token
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.login failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -208,7 +208,7 @@ export async function verify(req: any, res: Response) {
       token: jwt_token
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.verify failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -241,7 +241,7 @@ export async function role(req: any, res: Response) {
       token
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.role failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -276,7 +276,7 @@ export async function forgotPassword(req: Request, res: Response) {
 
     return res.status(200).json({ status: "success", message: GENERIC });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.forgotPassword failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -344,7 +344,7 @@ export async function resetPassword(req: Request, res: Response) {
       message: "Password has been reset successfully."
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.resetPassword failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -378,7 +378,7 @@ export async function resendVerification(req: Request, res: Response) {
 
     return res.status(200).json({ status: "success", message: GENERIC });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.resendVerification failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -505,7 +505,7 @@ export async function facebookToken(req: Request, res: Response) {
       token,
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "AuthController.facebookToken failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

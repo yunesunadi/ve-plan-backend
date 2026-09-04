@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import mongoose from "mongoose";
 import { isRequestInvalid } from "../helpers/utils";
 import { endNotAfterStart } from "../helpers/time";
@@ -11,9 +11,6 @@ function sessionTimeError(event: any, start: string, end: string): string | null
     return "Session end time must be after its start time.";
   }
 
-  // Compose the session's times onto the event's calendar day, in the event's
-  // timezone, and compare the resulting instants against the event's own
-  // derived window (H-EVT-04). Sessions carry no date or timezone of their own.
   const timezone = event.timezone;
   const session = deriveInstants({ date: event.date, start_time: start, end_time: end, timezone });
   const fallback = deriveInstants({
@@ -69,7 +66,7 @@ export async function create(req: any, res: Response) {
       return res.status(400).json({ status: "error", message: time_error });
     }
 
-    let session = await SessionService.create({
+    const session = await SessionService.create({
       title: req.body.title,
       description: req.body.description,
       speaker_info: req.body.speaker_info,
@@ -91,7 +88,7 @@ export async function create(req: any, res: Response) {
       data: session
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "SessionController.create failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -119,7 +116,7 @@ export async function getAll(req: any, res: Response) {
       data: sessions
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "SessionController.getAll failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -140,7 +137,7 @@ export async function getForEvent(req: any, res: Response) {
       data: sessions
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "SessionController.getForEvent failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -176,7 +173,7 @@ export async function getOneById(req: any, res: Response) {
       data: session
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "SessionController.getOneById failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -193,7 +190,7 @@ export async function update(req: any, res: Response) {
       return res.status(400).json({ status: "error", message: time_error });
     }
 
-    let session = await SessionService.update(req.params.id, {
+    const session = await SessionService.update(req.params.id, {
       title: req.body.title,
       description: req.body.description,
       speaker_info: req.body.speaker_info,
@@ -214,7 +211,7 @@ export async function update(req: any, res: Response) {
       data: session
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "SessionController.update failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -238,7 +235,7 @@ export async function deleteOne(req: any, res: Response) {
       message: "Delete session successfully."
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "SessionController.deleteOne failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."

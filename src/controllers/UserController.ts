@@ -36,7 +36,7 @@ export async function hasRole(req: any, res: Response) {
       role
     });
  } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.hasRole failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -64,7 +64,7 @@ export async function getAllById(req: any, res: Response) {
       data
     })
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.getAllById failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -100,7 +100,7 @@ export async function getAttendeesByNameOrEmail(req: any, res: Response) {
       data
     })
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.getAttendeesByNameOrEmail failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -142,7 +142,7 @@ export async function update(req: any, res: Response) {
       message: "Update user successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.update failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -205,7 +205,7 @@ export async function updatePassword(req: any, res: Response) {
       token
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.updatePassword failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -259,7 +259,7 @@ export async function deleteAccount(req: any, res: Response) {
       message: "Your account and all associated data have been deleted."
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "UserController.deleteAccount failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

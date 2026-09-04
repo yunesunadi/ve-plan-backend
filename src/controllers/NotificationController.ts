@@ -52,7 +52,7 @@ export async function getUserNotifications(req: any, res: Response) {
       meta: { total, unread, offset: page.offset, limit: page.limit }
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "NotificationController.getUserNotifications failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -73,7 +73,7 @@ export async function markAsRead(req: any, res: Response) {
       data: { updated: result.modifiedCount ?? 0 }
     });
   } catch (err) {
-    console.log("err", err);
+    req.log.error({ err }, "NotificationController.markAsRead failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -91,7 +91,7 @@ export async function markAllAsRead(req: any, res: Response) {
       data: { updated: result.modifiedCount ?? 0 }
     });
   } catch (err) {
-    console.log("err", err);
+    req.log.error({ err }, "NotificationController.markAllAsRead failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -108,7 +108,7 @@ export async function getUnreadCount(req: any, res: Response) {
       unreadCount: count
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "NotificationController.getUnreadCount failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -129,7 +129,7 @@ export async function deleteNotifications(req: any, res: Response) {
       data: { deleted: result.deletedCount ?? 0 }
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "NotificationController.deleteNotifications failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

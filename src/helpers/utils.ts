@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import mongoose from "mongoose";
+import { logger } from "./logger";
 
 export function isRequestInvalid(req: Request, res: Response) {
   const errors = validationResult(req);
@@ -55,7 +56,7 @@ export async function bestEffort(label: string, task: () => Promise<unknown>) {
   try {
     await task();
   } catch (err) {
-    console.log(`best-effort task failed: ${label}`, err);
+    logger.error({ err, label }, "best-effort task failed");
   }
 }
 

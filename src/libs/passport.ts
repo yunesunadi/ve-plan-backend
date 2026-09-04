@@ -29,7 +29,7 @@ passport.use(new GoogleStrategy({
       return done(new Error('No email found in Google profile'));
     }
 
-    let user: any = await UserService.upsertGoogleUser({
+    const user: any = await UserService.upsertGoogleUser({
       googleId: profile.id,
       name: profile._json.name || profile.displayName || "Google user",
       email: profile.emails[0].value,
@@ -55,7 +55,7 @@ passport.use(new FacebookStrategy({
       return done(new Error('No email found in Facebook profile'));
     }
 
-    let user: any = await UserService.upsertFacebookUser({
+    const user: any = await UserService.upsertFacebookUser({
       facebookId: profile.id,
       name: `${profile._json.first_name} ${profile._json.last_name}`,
       email: profile.emails[0].value,

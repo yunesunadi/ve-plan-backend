@@ -75,7 +75,7 @@ export async function invite(req: any, res: Response) {
             recipient: user.email,
             additional: { name: user.name, event_title: event.title },
           };
-        }));
+        }), { event: event_id });
       });
 
       await bestEffort("invitation notifications", () => NotificationService.sendInvitation(toInvite, event));
@@ -92,10 +92,11 @@ export async function invite(req: any, res: Response) {
       data: {
         invited: summary(toInvite),
         skipped: summary([...existingIds]),
+        email: { queued: toInvite.length },
       },
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventInviteController.invite failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -113,7 +114,7 @@ export async function getAllByEventId(req: Request, res: Response) {
       data: invited_users
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventInviteController.getAllByEventId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -131,7 +132,7 @@ export async function getAllAcceptedByEventId(req: Request, res: Response) {
       data: invite_accepted_users
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventInviteController.getAllAcceptedByEventId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -150,7 +151,7 @@ export async function getAllByUserId(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventInviteController.getAllByUserId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -169,7 +170,7 @@ export async function getAllAcceptedByUserId(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventInviteController.getAllAcceptedByUserId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -220,7 +221,7 @@ export async function acceptInvite(req: any, res: Response) {
       message: "Invitation has been successfully accepted.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventInviteController.acceptInvite failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -265,7 +266,7 @@ export async function startMeeting(req: any, res: Response) {
         action: "meeting_started",
         recipient: user.email,
         additional: { name: user.name, event_title: event.title },
-      })));
+      })), { event: event_id });
     });
 
     await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event));
@@ -275,7 +276,7 @@ export async function startMeeting(req: any, res: Response) {
       message: "Meeting email has been successfully sent.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventInviteController.startMeeting failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

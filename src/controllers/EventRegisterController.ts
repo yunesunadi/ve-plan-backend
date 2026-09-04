@@ -56,7 +56,7 @@ export async function register(req: any, res: Response) {
       message: "Register event successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventRegisterController.register failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -109,7 +109,7 @@ export async function unregister(req: any, res: Response) {
       message: "Unregister event successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventRegisterController.unregister failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -135,7 +135,7 @@ export async function hasRegistered(req: any, res: Response) {
       has_registered: true,
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.hasRegistered failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -160,7 +160,7 @@ export async function isRegisterApproved(req: any, res: Response) {
       is_register_approved: true,
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.isRegisterApproved failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -179,7 +179,7 @@ export async function getAllByEventId(req: Request, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.getAllByEventId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -197,7 +197,7 @@ export async function getAllApprovedByEventId(req: Request, res: Response) {
       data: approved_users
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.getAllApprovedByEventId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -216,7 +216,7 @@ export async function getAllByUserId(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.getAllByUserId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -235,7 +235,7 @@ export async function getAllApprovedByUserId(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventRegisterController.getAllApprovedByUserId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -290,7 +290,7 @@ export async function approveRegister(req: any, res: Response) {
             recipient: user.email,
             additional: { name: user.name, event_title: event.title },
           };
-        }));
+        }), { event: req.body.event_id });
       });
 
       await bestEffort("register_approved notifications", () => NotificationService.sendRegistrationApproved(approvedIds, event));
@@ -307,10 +307,11 @@ export async function approveRegister(req: any, res: Response) {
       data: {
         approved: summary(approvedIds),
         skipped: summary(skippedIds),
+        email: { queued: approvedIds.length },
       },
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventRegisterController.approveRegister failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -355,7 +356,7 @@ export async function startMeeting(req: any, res: Response) {
         action: "meeting_started",
         recipient: user.email,
         additional: { name: user.name, event_title: event.title },
-      })));
+      })), { event: event_id });
     });
 
     await bestEffort("meeting_started notifications", () => NotificationService.sendMeetingStarted(user_id_list, event));
@@ -365,7 +366,7 @@ export async function startMeeting(req: any, res: Response) {
       message: "Meeting email has been successfully sent.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventRegisterController.startMeeting failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

@@ -123,7 +123,7 @@ export async function createToken(req: any, res: Response) {
       room_name: meeting.room_name,
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.createToken failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -186,7 +186,7 @@ export async function create(req: any, res: Response) {
       data: meeting
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.create failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -212,7 +212,7 @@ export async function isCreated(req: any, res: Response) {
       is_created: true,
     });
  } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.isCreated failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -233,7 +233,7 @@ export async function isStarted(req: any, res: Response) {
       is_started,
     });
  } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.isStarted failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -249,7 +249,7 @@ export async function getOneById(req: any, res: Response) {
       data: req.meeting
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "MeetingController.getOneById failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -299,7 +299,7 @@ export async function getOneByEventId(req: any, res: Response) {
       }
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "MeetingController.getOneByEventId failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -353,7 +353,7 @@ export async function isExpired(req: any, res: Response) {
       is_expired,
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.isExpired failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -386,7 +386,7 @@ export async function updateStartTime(req: any, res: Response) {
       message: "Update meeting successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.updateStartTime failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -408,7 +408,7 @@ async function notifyMeetingAttendees(event_id: string, event_title: string, act
     action,
     recipient: user.email,
     additional: { name: user.name, event_title },
-  })));
+  })), { event: event_id });
 
   const user_id_list = recipients.map((user: any) => String(user._id));
   const event_ref = { _id: event_id, title: event_title };
@@ -449,7 +449,7 @@ export async function endMeeting(req: any, res: Response) {
       message: "Meeting ended.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.endMeeting failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -476,7 +476,7 @@ export async function reopenMeeting(req: any, res: Response) {
       message: "Meeting reopened.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.reopenMeeting failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -513,7 +513,7 @@ export async function updateEndTime(req: any, res: Response) {
       message: "Update meeting successfully.",
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "MeetingController.updateEndTime failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."

@@ -2,6 +2,7 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
 import jwt from "jsonwebtoken";
 import { corsOrigin } from "./env";
+import { logger } from "../helpers/logger";
 import * as UserService from "../services/UserService";
 
 interface AuthenticatedSocket extends Socket {
@@ -42,7 +43,7 @@ export const initializeSocket = (server: HTTPServer) => {
 
       next();
     } catch (error) {
-      console.error('Socket authentication error:', error);
+      logger.error({ err: error }, "socket authentication error");
       next(new Error("Authentication error"));
     }
   });
@@ -57,18 +58,18 @@ export const initializeSocket = (server: HTTPServer) => {
           existing[0].disconnect(true);
         }
       } catch (error) {
-        console.error(`Error enforcing socket cap for user ${socket.userId}:`, error);
+        logger.error({ err: error, userId: socket.userId }, "failed to enforce socket cap");
       }
 
       socket.join(userRoom);
-      console.log(`Socket.IO connected: user=${socket.userId} socket=${socket.id}`);
+      logger.info({ userId: socket.userId, socketId: socket.id }, "socket connected");
     }
 
     socket.on("disconnect", () => {
       if (socket.userId) {
         const userRoom = `user_${socket.userId}`;
         socket.leave(userRoom);
-        console.log(`Socket.IO disconnected: user=${socket.userId} socket=${socket.id}`);
+        logger.info({ userId: socket.userId, socketId: socket.id }, "socket disconnected");
       }
     });
   });
@@ -79,13 +80,13 @@ export const disconnectUser = (userId: string) => {
   try {
     io.in(`user_${userId}`).disconnectSockets(true);
   } catch (error) {
-    console.error(`Error disconnecting sockets for user ${userId}:`, error);
+    logger.error({ err: error, userId }, "failed to disconnect user sockets");
   }
 };
 
 export const sendToUser = (userId: string, emitted_event: string, data: any) => {
   if (!io) {
-    console.error('Socket.IO not initialized');
+    logger.error("socket.io not initialized");
     return;
   }
 
@@ -94,6 +95,6 @@ export const sendToUser = (userId: string, emitted_event: string, data: any) => 
   try {
     io.to(userRoom).emit(emitted_event, data);
   } catch (error) {
-    console.error(`Error sending ${emitted_event} to user ${userId}:`, error);
+    logger.error({ err: error, userId, event: emitted_event }, "failed to send socket event");
   }
 }

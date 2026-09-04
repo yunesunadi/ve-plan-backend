@@ -8,6 +8,7 @@ import { deriveInstants, resolveTimezone } from "../helpers/eventTime";
 import * as EventService from "../services/EventService";
 import * as MeetingService from "../services/MeetingService";
 import * as NotificationService from "../services/NotificationService";
+import * as EmailService from "../services/EmailService";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -53,7 +54,7 @@ export async function create(req: any, res: Response) {
       });
     }
 
-    let event = await EventService.create({
+    const event = await EventService.create({
       cover: filename,
       title: req.body.title,
       description: req.body.description,
@@ -83,7 +84,7 @@ export async function create(req: any, res: Response) {
       data: event
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventController.create failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
@@ -102,7 +103,7 @@ export async function getAll(req: any, res: Response) {
       data: events
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventController.getAll failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -121,7 +122,7 @@ export async function getAllByQuery(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventController.getAllByQuery failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -140,7 +141,7 @@ export async function getMyEvents(req: any, res: Response) {
       meta: pageMeta(total, offset, limit)
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventController.getMyEvents failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -181,7 +182,7 @@ export async function getOneById(req: any, res: Response) {
       data: { ...event.toObject(), participation }
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventController.getOneById failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
@@ -240,7 +241,7 @@ export async function update(req: any, res: Response) {
       updated_data.cover = req.file.filename;
     }
 
-    let event = await EventService.update(req.params.id, updated_data);
+    const event = await EventService.update(req.params.id, updated_data);
 
     if (event && req.file && req.event?.cover && req.event.cover !== req.file.filename) {
       removeUpload(req.event.cover, "covers");
@@ -274,12 +275,52 @@ export async function update(req: any, res: Response) {
       data: event
     });
   } catch (err: any) {
-    console.log("err", err);
+    req.log.error({ err }, "EventController.update failed");
     return res.status(500).json({
       status: "error",
       message: "Something went wrong."
     });
   }
+}
+
+export async function getEmailStatus(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const status = await EmailService.statusForEvent(req.params.id as string);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch email delivery status successfully.",
+      data: status
+    });
+  } catch (err: any) {
+     req.log.error({ err }, "EventController.getEmailStatus failed");
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong."
+     });
+   }
+}
+
+export async function retryEmails(req: any, res: Response) {
+  try {
+    if (isRequestInvalid(req, res)) return;
+
+    const requeued = await EmailService.requeueFailedForEvent(req.params.id as string);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Failed emails requeued for delivery.",
+      data: { requeued }
+    });
+  } catch (err: any) {
+     req.log.error({ err }, "EventController.retryEmails failed");
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong."
+     });
+   }
 }
 
 export async function deleteOne(req: any, res: Response) {
@@ -308,7 +349,7 @@ export async function deleteOne(req: any, res: Response) {
       message: "Delete event successfully."
     });
   } catch (err: any) {
-     console.log("err", err);
+     req.log.error({ err }, "EventController.deleteOne failed");
      return res.status(500).json({
        status: "error",
        message: "Something went wrong."
