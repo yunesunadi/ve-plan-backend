@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { objectId, escapeRegExp, isEventExpired } from "../helpers/utils";
+import { objectId, escapeRegExp, isEventExpired, meetingIsLive } from "../helpers/utils";
 import { parsePaging } from "../helpers/paging";
 import { deriveInstants, resolveTimezone, DEFAULT_EVENT_TZ } from "../helpers/eventTime";
 import * as EventRegisterService from "./EventRegisterService";
@@ -170,12 +170,7 @@ export async function getParticipation(event: any, user: { _id: string; role: st
   else if (register) state = register.register_approved ? "registration_approved" : "registered";
   else state = "none";
 
-  const meeting_started = Boolean(
-    meeting && !meeting.ended &&
-    ((register && register.meeting_started) || (invite && invite.meeting_started))
-  );
-
-  return { state, meeting_started };
+  return { state, meeting_started: meetingIsLive(meeting) };
 }
 
 export function update(id: string, event: any) {

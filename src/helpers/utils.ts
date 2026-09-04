@@ -106,6 +106,10 @@ export function joinWindow(event: EventTiming) {
   };
 }
 
+export function meetingIsLive(meeting: any): boolean {
+  return Boolean(meeting && !meeting.ended && meeting.host_present);
+}
+
 export type JoinWindowState = "early" | "open" | "closed";
 
 export function joinWindowState(event: EventTiming, now: number = Date.now()) {

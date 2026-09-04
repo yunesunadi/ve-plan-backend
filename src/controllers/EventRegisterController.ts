@@ -264,39 +264,50 @@ export async function approveRegister(req: any, res: Response) {
       });
     }
 
+    const users = await UserService.findManyByIds(requested_user_ids);
+    const usersById = new Map(users.map((user: any) => [user._id.toString(), user]));
+
     const pending = await EventRegisterService.getPendingByEventAndUsers(req.body.event_id, requested_user_ids);
-    const user_id_list = pending.map((registration: any) => registration.user.toString());
+    const approvedIds: string[] = pending.map((registration: any) => registration.user.toString());
+    const approvedSet = new Set<string>(approvedIds);
+    const skippedIds: string[] = requested_user_ids.filter((id: string) => !approvedSet.has(id));
 
-    if (user_id_list.length < 1) {
-      return res.status(200).json({
-        status: "success",
-        message: "No pending registrations to approve.",
+    if (approvedIds.length > 0) {
+      const register_approved = await EventRegisterService.approveRegister(approvedIds, req.body.event_id);
+
+      if (!register_approved) {
+        return res.status(500).json({
+          status: "error",
+          message: "Failed to approve registration.",
+        });
+      }
+
+      await bestEffort("register_approved emails", async () => {
+        await EmailService.sendBatch(approvedIds.map((id: string) => {
+          const user: any = usersById.get(id);
+          return {
+            action: "register_approved",
+            recipient: user.email,
+            additional: { name: user.name, event_title: event.title },
+          };
+        }));
       });
+
+      await bestEffort("register_approved notifications", () => NotificationService.sendRegistrationApproved(approvedIds, event));
     }
 
-    const register_approved = await EventRegisterService.approveRegister(user_id_list, req.body.event_id);
-
-    if (!register_approved) {
-      return res.status(500).json({
-        status: "error",
-        message: "Failed to approve registration.",
-      });
-    }
-
-    await bestEffort("register_approved emails", async () => {
-      const users = await UserService.findManyByIds(user_id_list);
-      await EmailService.sendBatch(users.map((user: any) => ({
-        action: "register_approved",
-        recipient: user.email,
-        additional: { name: user.name, event_title: event.title },
-      })));
+    const summary = (ids: string[]) => ids.map((id: string) => {
+      const user: any = usersById.get(id);
+      return { _id: id, name: user?.name };
     });
-
-    await bestEffort("register_approved notifications", () => NotificationService.sendRegistrationApproved(user_id_list, event));
 
     return res.status(200).json({
       status: "success",
-      message: "Registration has been successfully approved.",
+      message: "Registrations processed.",
+      data: {
+        approved: summary(approvedIds),
+        skipped: summary(skippedIds),
+      },
     });
   } catch (err: any) {
     console.log("err", err);

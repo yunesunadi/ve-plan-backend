@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { isRequestInvalid, bestEffort, joinWindowState } from "../helpers/utils";
+import { isRequestInvalid, bestEffort, joinWindowState, meetingIsLive } from "../helpers/utils";
 import * as MeetingService from "../services/MeetingService";
 import * as EventService from "../services/EventService";
 import * as EventRegisterService from "../services/EventRegisterService";
@@ -20,12 +20,8 @@ async function getParticipation(event_id: string, user_id: string) {
 
   const approved_registrant = Boolean(registered && registered.register_approved);
   const accepted_invitee = Boolean(invited && invited.invitation_accepted);
-  const notified = Boolean((registered && registered.meeting_started) || (invited && invited.meeting_started));
 
-  return {
-    is_participant: approved_registrant || accepted_invitee,
-    notified,
-  };
+  return { is_participant: approved_registrant || accepted_invitee };
 }
 
 export async function createToken(req: any, res: Response) {
@@ -76,19 +72,12 @@ export async function createToken(req: any, res: Response) {
     }
 
     if (!is_owner) {
-      const { is_participant, notified } = await getParticipation(event_id, req.user._id);
+      const { is_participant } = await getParticipation(event_id, req.user._id);
 
       if (!is_participant) {
         return res.status(403).json({
           status: "error",
           message: "You are not a participant of this event.",
-        });
-      }
-
-      if (!notified) {
-        return res.status(403).json({
-          status: "error",
-          message: "The host has not started this meeting yet.",
         });
       }
 
@@ -234,21 +223,14 @@ export async function isCreated(req: any, res: Response) {
 export async function isStarted(req: any, res: Response) {
   try {
     const meeting = await MeetingService.getOneByEventId(req.params.id);
-    const registered = await EventRegisterService.getHasRegistered(req.params.id, req.user._id);
-    const invited = await EventInviteService.getHasInvited(req.params.id, req.user._id);
-    
-    if (meeting && !meeting.ended && ((registered && registered.meeting_started) || (invited && invited.meeting_started))) {
-      return res.status(200).json({
-        status: "success",
-        message: "Meeting for this event has already started.",
-        is_started: true,
-      });
-    }
+    const is_started = meetingIsLive(meeting);
 
     return res.status(200).json({
       status: "success",
-      message: "There is no meeting for this event.",
-      is_started: false
+      message: is_started
+        ? "The meeting for this event is live."
+        : "The meeting for this event is not live.",
+      is_started,
     });
  } catch (err: any) {
     console.log("err", err);
@@ -298,9 +280,9 @@ export async function getOneByEventId(req: any, res: Response) {
       });
     }
 
-    const { is_participant, notified } = await getParticipation(event_id, req.user._id);
+    const { is_participant } = await getParticipation(event_id, req.user._id);
 
-    if (!is_participant || !notified) {
+    if (!is_participant) {
       return res.status(403).json({
         status: "error",
         message: "You are not a participant of this event.",
