@@ -106,6 +106,22 @@ const subjectFor = (action: string): string | undefined => ({
   meeting_ended: "Meeting Ended",
 }[action]);
 
+const NOTIFICATION_ACTIONS = new Set([
+  "register_approved",
+  "invitation_sent",
+  "meeting_started",
+  "meeting_ended",
+]);
+
+function unsubscribeHeaders(action: string): Record<string, string> | undefined {
+  if (!NOTIFICATION_ACTIONS.has(action)) return undefined;
+  const address = process.env.UNSUBSCRIBE_EMAIL || process.env.SENDER;
+  if (!address) return undefined;
+  return {
+    "List-Unsubscribe": `<mailto:${address}?subject=Unsubscribe%20from%20VE-Plan%20event%20emails>`,
+  };
+}
+
 export function renderMail(action: string, meta: any): { subject: string | undefined; html: string } {
   const subject = subjectFor(action);
   const html = renderTemplate(action, {
@@ -121,11 +137,13 @@ async function deliver(log: any) {
     let mailOptions: nodemailer.SendMailOptions;
     try {
       const { subject, html } = renderMail(log.action, log.meta);
+      const headers = unsubscribeHeaders(log.action);
       mailOptions = {
         to: log.to,
         from: log.from,
         subject: log.subject ?? subject,
         html,
+        ...(headers ? { headers } : {}),
       };
     } catch (renderError: any) {
       log.status = "failed";
