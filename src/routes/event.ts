@@ -7,6 +7,7 @@ const EventController = require("../controllers/EventController");
 const SessionController = require("../controllers/SessionController");
 const jwtAuth = require("../middlewares/jwtAuth");
 const organizerAuth = require("../middlewares/organizerAuth");
+const attendeeAuth = require("../middlewares/attendeeAuth");
 const eventOwnerAuth = require("../middlewares/eventOwnerAuth");
 
 const create_validation = [
@@ -34,6 +35,9 @@ const cover_upload = imageUpload("covers");
 router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.create);
 router.get("/events_by_query", jwtAuth, EventController.getAllByQuery);
 router.get("/own", jwtAuth, organizerAuth, EventController.getMyEvents);
+router.get("/organizer_summary", jwtAuth, organizerAuth, EventController.getOrganizerSummary);
+router.get("/attendee_summary", jwtAuth, attendeeAuth, EventController.getAttendeeSummary);
+router.get("/my", jwtAuth, attendeeAuth, EventController.getAttendeeEvents);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
 router.get("/:id/sessions", objectIdParam("id", "event"), handleValidation, jwtAuth, SessionController.getForEvent);

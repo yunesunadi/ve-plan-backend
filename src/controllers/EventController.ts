@@ -149,6 +149,61 @@ export async function getMyEvents(req: any, res: Response) {
    }
 }
 
+export async function getOrganizerSummary(req: any, res: Response) {
+  try {
+    const data = await EventService.getOrganizerSummary(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch organizer summary successfully.",
+      data
+    });
+  } catch (err: any) {
+     req.log.error({ err }, "EventController.getOrganizerSummary failed");
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong."
+     });
+   }
+}
+
+export async function getAttendeeSummary(req: any, res: Response) {
+  try {
+    const data = await EventService.getAttendeeSummary(req.user._id);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch attendee summary successfully.",
+      data
+    });
+  } catch (err: any) {
+     req.log.error({ err }, "EventController.getAttendeeSummary failed");
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong."
+     });
+   }
+}
+
+export async function getAttendeeEvents(req: any, res: Response) {
+  try {
+    const { items, total, offset, limit } = await EventService.getMyEventsForAttendee(req.user._id, req.query);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Fetch events successfully.",
+      data: items,
+      meta: pageMeta(total, offset, limit)
+    });
+  } catch (err: any) {
+     req.log.error({ err }, "EventController.getAttendeeEvents failed");
+     return res.status(500).json({
+       status: "error",
+       message: "Something went wrong."
+     });
+   }
+}
+
 export async function getOneById(req: any, res: Response) {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {

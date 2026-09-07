@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { objectId, escapeRegExp } from "../helpers/utils";
+import { parsePaging } from "../helpers/paging";
 import { removeUpload } from "../helpers/uploads";
 
 const UserModel = require("../models/User");
@@ -156,22 +157,28 @@ export function getRole(id: string) {
   return UserModel.findById(objectId(id)).select("role");
 }
 
-export function findAttendeesByNameOrEmail(keyword: string, page = 1) {
+export async function findAttendeesByNameOrEmail(keyword: string, query: any = {}) {
   const safe = escapeRegExp(keyword);
-  const skip = Math.max(0, (page - 1)) * ATTENDEE_SEARCH_LIMIT;
+  const { offset, limit } = parsePaging(query, { defaultLimit: 20, maxLimit: ATTENDEE_SEARCH_LIMIT });
 
-  return UserModel
-    .find({
-      $or: [
-        { name: { $regex: safe, $options: 'i' } },
-        { email: { $regex: safe, $options: 'i' } }
-      ],
-      role: "attendee"
-    })
-    .select("name profile email")
-    .sort({ name: 1 })
-    .skip(skip)
-    .limit(ATTENDEE_SEARCH_LIMIT);
+  const filter = {
+    $or: [
+      { name: { $regex: safe, $options: 'i' } },
+      { email: { $regex: safe, $options: 'i' } }
+    ],
+    role: "attendee"
+  };
+
+  const [items, total] = await Promise.all([
+    UserModel.find(filter)
+      .select("name profile email")
+      .sort({ name: 1, _id: 1 })
+      .skip(offset)
+      .limit(limit),
+    UserModel.countDocuments(filter),
+  ]);
+
+  return { items, total, offset, limit };
 }
 
 export function update(id: string, data: { name: string; profile?: string }) {

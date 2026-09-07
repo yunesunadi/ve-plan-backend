@@ -72,6 +72,25 @@ async function getPagedByUser(base: any, query: any) {
   return { items: page.filter((r: any) => r.event), total, offset, limit };
 }
 
+export function countAwaitingApprovalForEvents(event_ids: any[]) {
+  return EventRegisterModel.countDocuments({ event: { $in: event_ids }, register_approved: false });
+}
+
+export function listMembershipsForUser(user_id: string) {
+  return EventRegisterModel.find({ user: objectId(user_id) })
+    .select("event register_approved createdAt updatedAt")
+    .lean();
+}
+
+export function recentForEvents(event_ids: any[], limit: number) {
+  return EventRegisterModel.find({ event: { $in: event_ids } })
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(limit)
+    .populate("user", "name")
+    .populate("event", "title")
+    .lean();
+}
+
 export function getPendingByEventAndUsers(event_id: string, user_id_list: string[]) {
   const event = objectId(event_id);
   const users = user_id_list

@@ -74,6 +74,21 @@ export function update(id: string, meeting: any) {
   return MeetingModel.findByIdAndUpdate(objectId(id), meeting, { new: true });
 }
 
+export function getLiveByEventIds(event_ids: any[]) {
+  return MeetingModel.findOne({ event: { $in: event_ids }, ended: false, host_present: true })
+    .sort({ started_at: -1 })
+    .populate("event", "title")
+    .lean();
+}
+
+export function recentStartedForEvents(event_ids: any[], limit: number) {
+  return MeetingModel.find({ event: { $in: event_ids }, started_at: { $ne: null } })
+    .sort({ started_at: -1, _id: -1 })
+    .limit(limit)
+    .populate("event", "title")
+    .lean();
+}
+
 export function setEnded(id: string, ended: boolean) {
   return MeetingModel.findOneAndUpdate(
     { _id: objectId(id), ended: !ended },

@@ -189,3 +189,183 @@ export async function getParticipantUserIds(event_id: string): Promise<string[]>
 export function deleteOne(id: string) {
   return EventModel.findOneAndDelete(objectId(id));
 }
+
+async function getOrganizerRecentActivity(event_ids: any[], limit = 10) {
+  if (event_ids.length === 0) return [];
+
+  const [registrations, acceptedInvites, startedMeetings] = await Promise.all([
+    EventRegisterService.recentForEvents(event_ids, limit),
+    EventInviteService.recentAcceptedForEvents(event_ids, limit),
+    MeetingService.recentStartedForEvents(event_ids, limit),
+  ]);
+
+  const activity = [
+    ...registrations.map((r: any) => ({
+      type: "registration",
+      event_id: r.event?._id ? String(r.event._id) : null,
+      event_title: r.event?.title ?? null,
+      actor_name: r.user?.name ?? null,
+      at: r.createdAt,
+    })),
+    ...acceptedInvites.map((i: any) => ({
+      type: "invitation_accepted",
+      event_id: i.event?._id ? String(i.event._id) : null,
+      event_title: i.event?.title ?? null,
+      actor_name: i.user?.name ?? null,
+      at: i.updatedAt,
+    })),
+    ...startedMeetings.map((m: any) => ({
+      type: "meeting_started",
+      event_id: m.event?._id ? String(m.event._id) : null,
+      event_title: m.event?.title ?? null,
+      actor_name: null,
+      at: m.started_at,
+    })),
+  ];
+
+  return activity
+    .filter((a) => a.event_id && a.at)
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, limit);
+}
+
+export async function getOrganizerSummary(user_id: string) {
+  const organizer = objectId(user_id);
+  const now = new Date();
+
+  const events = await EventModel.find({ user: organizer })
+    .sort({ starts_at: 1, _id: 1 })
+    .populate("user", omitted_user_fields);
+
+  const eventIds = events.map((e: any) => e._id);
+  const upcoming = events.filter((e: any) => e.ends_at && new Date(e.ends_at) >= now);
+
+  const [awaitingApproval, pendingInvitations, liveMeeting] = await Promise.all([
+    EventRegisterService.countAwaitingApprovalForEvents(eventIds),
+    EventInviteService.countPendingForEvents(eventIds),
+    MeetingService.getLiveByEventIds(eventIds),
+  ]);
+
+  const live_meeting = liveMeeting
+    ? {
+        event_id: String(liveMeeting.event?._id ?? liveMeeting.event),
+        title: liveMeeting.event?.title ?? null,
+      }
+    : null;
+
+  return {
+    upcoming_events_count: upcoming.length,
+    registrations_awaiting_approval_count: awaitingApproval,
+    pending_invitations_count: pendingInvitations,
+    next_event: upcoming[0] ?? null,
+    live_meeting,
+    recent_activity: await getOrganizerRecentActivity(eventIds),
+  };
+}
+
+function attendeeStateByEvent(invites: any[], registers: any[]) {
+  const membership = new Map<string, { state: string; at: Date }>();
+  for (const r of registers) {
+    membership.set(String(r.event), {
+      state: r.register_approved ? "registration_approved" : "registered",
+      at: r.updatedAt ?? r.createdAt,
+    });
+  }
+  for (const i of invites) {
+    membership.set(String(i.event), {
+      state: i.invitation_accepted ? "invitation_accepted" : "invited",
+      at: i.updatedAt ?? i.createdAt,
+    });
+  }
+  return membership;
+}
+
+export async function getAttendeeSummary(user_id: string) {
+  const nowMs = Date.now();
+  const soonCutoff = new Date(nowMs + 24 * 60 * 60 * 1000);
+
+  const [invites, registers] = await Promise.all([
+    EventInviteService.listMembershipsForUser(user_id),
+    EventRegisterService.listMembershipsForUser(user_id),
+  ]);
+
+  const membership = attendeeStateByEvent(invites as any[], registers as any[]);
+
+  const confirmedIds = [...membership]
+    .filter(([, m]) => m.state === "registration_approved" || m.state === "invitation_accepted")
+    .map(([id]) => objectId(id));
+  const pendingInviteIds = (invites as any[])
+    .filter((i) => !i.invitation_accepted)
+    .map((i) => objectId(i.event));
+  const excludeIds = [...membership.keys()].map((id) => objectId(id));
+
+  const [confirmedEvents, pendingInvitationEvents, liveMeeting, recommended] = await Promise.all([
+    EventModel.find({ _id: { $in: confirmedIds } }).populate("user", omitted_user_fields),
+    EventModel.find({ _id: { $in: pendingInviteIds } })
+      .sort({ starts_at: 1, _id: 1 })
+      .populate("user", omitted_user_fields),
+    MeetingService.getLiveByEventIds(confirmedIds),
+    EventModel.find({ type: "public", starts_at: { $gt: new Date() }, _id: { $nin: excludeIds } })
+      .sort({ starts_at: 1, _id: 1 })
+      .limit(6)
+      .populate("user", omitted_user_fields),
+  ]);
+
+  const liveEventId = liveMeeting ? String(liveMeeting.event?._id ?? liveMeeting.event) : null;
+
+  const happening_now = confirmedEvents.filter((e: any) => String(e._id) === liveEventId);
+  const starting_soon = confirmedEvents
+    .filter((e: any) => {
+      if (!e.starts_at || String(e._id) === liveEventId) return false;
+      const startsAt = new Date(e.starts_at);
+      return startsAt.getTime() > nowMs && startsAt <= soonCutoff;
+    })
+    .sort((a: any, b: any) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  return {
+    happening_now,
+    starting_soon,
+    pending_invitations: pendingInvitationEvents,
+    recommended,
+  };
+}
+
+const MY_EVENTS_FILTERS: Record<string, string[]> = {
+  all: ["invited", "registered", "registration_approved", "invitation_accepted"],
+  invited: ["invited"],
+  registered: ["registered"],
+  approved: ["registration_approved"],
+  attending: ["invitation_accepted"],
+};
+
+export async function getMyEventsForAttendee(user_id: string, query: any = {}) {
+  const { offset, limit } = parsePaging(query, { defaultLimit: 10 });
+  const filterKey =
+    typeof query.filter === "string" && MY_EVENTS_FILTERS[query.filter] ? query.filter : "all";
+  const allowedStates = new Set(MY_EVENTS_FILTERS[filterKey]);
+
+  const [invites, registers] = await Promise.all([
+    EventInviteService.listMembershipsForUser(user_id),
+    EventRegisterService.listMembershipsForUser(user_id),
+  ]);
+
+  const membership = attendeeStateByEvent(invites as any[], registers as any[]);
+  const candidateIds = [...membership.keys()].map((id) => objectId(id));
+
+  const events = await EventModel.find({ _id: { $in: candidateIds } }).populate(
+    "user",
+    omitted_user_fields
+  );
+
+  const rows = events
+    .map((event: any) => ({ event, ...membership.get(String(event._id))! }))
+    .filter((row: any) => allowedStates.has(row.state))
+    .sort((a: any, b: any) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+  const items = rows.slice(offset, offset + limit).map((row: any) => ({
+    ...row.event.toObject(),
+    participation_state: row.state,
+  }));
+
+  return { items, total: rows.length, offset, limit };
+}

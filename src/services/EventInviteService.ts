@@ -90,6 +90,25 @@ export function startMeeting(user_id_list: string[], event_id: string) {
   return EventInviteModel.updateMany({ user: { $in: user_id_list_object }, event }, { meeting_started: true }, { new: true });
 }
 
+export function countPendingForEvents(event_ids: any[]) {
+  return EventInviteModel.countDocuments({ event: { $in: event_ids }, invitation_accepted: false });
+}
+
+export function listMembershipsForUser(user_id: string) {
+  return EventInviteModel.find({ user: objectId(user_id) })
+    .select("event invitation_accepted createdAt updatedAt")
+    .lean();
+}
+
+export function recentAcceptedForEvents(event_ids: any[], limit: number) {
+  return EventInviteModel.find({ event: { $in: event_ids }, invitation_accepted: true })
+    .sort({ updatedAt: -1, _id: -1 })
+    .limit(limit)
+    .populate("user", "name")
+    .populate("event", "title")
+    .lean();
+}
+
 export function getHasInvited(event_id: string, user_id: string) {
   const event = objectId(event_id);
   const user = objectId(user_id);

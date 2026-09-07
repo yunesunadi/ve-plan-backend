@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { isRequestInvalid, maskEmail } from "../helpers/utils";
+import { parsePaging, pageMeta } from "../helpers/paging";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
 import * as UserService from "../services/UserService";
@@ -75,19 +76,20 @@ export async function getAllById(req: any, res: Response) {
 export async function getAttendeesByNameOrEmail(req: any, res: Response) {
   try {
     const raw = typeof req.query.search === "string" ? req.query.search.trim() : "";
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const { offset, limit } = parsePaging(req.query, { defaultLimit: 20, maxLimit: 50 });
 
     if (raw.length < MIN_ATTENDEE_SEARCH_LENGTH) {
       return res.status(200).json({
         status: "success",
         message: "Enter at least 2 characters to search.",
-        data: []
+        data: [],
+        meta: pageMeta(0, offset, limit)
       });
     }
 
-    const attendees = await UserService.findAttendeesByNameOrEmail(raw, page);
+    const { items, total } = await UserService.findAttendeesByNameOrEmail(raw, req.query);
 
-    const data = attendees.map((attendee: any) => ({
+    const data = items.map((attendee: any) => ({
       _id: attendee._id,
       name: attendee.name,
       profile: attendee.profile ?? null,
@@ -97,7 +99,8 @@ export async function getAttendeesByNameOrEmail(req: any, res: Response) {
     return res.status(200).json({
       status: "success",
       message: "Fetch attendees successfully.",
-      data
+      data,
+      meta: pageMeta(total, offset, limit)
     })
   } catch (err: any) {
     req.log.error({ err }, "UserController.getAttendeesByNameOrEmail failed");
