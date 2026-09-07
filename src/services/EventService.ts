@@ -141,6 +141,10 @@ export function getOneById(id: string) {
   return EventModel.findById(objectId(id)).populate("user", omitted_user_fields);
 }
 
+export function countByOwner(user_id: string): Promise<number> {
+  return EventModel.countDocuments({ user: objectId(user_id) });
+}
+
 export async function canUserView(event: any, user_id: string): Promise<boolean> {
   if (!event) return false;
   if (event.type === "public") return true;

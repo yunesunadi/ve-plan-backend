@@ -29,6 +29,15 @@ export const passwordResetLimiter = rateLimit({
   message,
 });
 
+export const clientErrorLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  keyGenerator: (req: any) => ipKeyGenerator(req.ip || "unknown"),
+  message,
+});
+
 export const sensitiveActionLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 5,

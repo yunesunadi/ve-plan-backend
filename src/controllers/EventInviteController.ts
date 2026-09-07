@@ -6,6 +6,7 @@ import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 import * as UserService from "../services/UserService";
 import * as EventService from "../services/EventService";
+import * as AuditService from "../services/AuditService";
 
 export async function invite(req: any, res: Response) {
   try {
@@ -85,6 +86,13 @@ export async function invite(req: any, res: Response) {
       const user: any = usersById.get(id);
       return { _id: id, name: user?.name };
     });
+
+    if (toInvite.length > 0) {
+      await AuditService.record(req, "invite.send", { type: "event", id: event_id }, {
+        invited: toInvite.length,
+        skipped: existingIds.size,
+      });
+    }
 
     return res.status(200).json({
       status: "success",

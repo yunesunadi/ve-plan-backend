@@ -9,6 +9,7 @@ import * as EventService from "../services/EventService";
 import * as MeetingService from "../services/MeetingService";
 import * as NotificationService from "../services/NotificationService";
 import * as EmailService from "../services/EmailService";
+import * as AuditService from "../services/AuditService";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -398,6 +399,10 @@ export async function deleteOne(req: any, res: Response) {
     }
 
     removeUpload(deleted.cover ?? req.event?.cover, "covers");
+
+    await AuditService.record(req, "event.delete", { type: "event", id: req.params.id }, {
+      title: deleted.title ?? req.event?.title,
+    });
 
     return res.status(200).json({
       status: "success",

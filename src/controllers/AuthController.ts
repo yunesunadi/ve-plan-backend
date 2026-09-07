@@ -13,6 +13,7 @@ const GENERIC_LOGIN_ERROR = "Email or password is incorrect.";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
 import * as FacebookService from "../services/FacebookService";
+import * as AuditService from "../services/AuditService";
 import * as SocketService from "../libs/socket";
 
 export async function register(req: Request, res: Response) {
@@ -235,6 +236,8 @@ export async function role(req: any, res: Response) {
 
     await bestEffort("registration welcome notification", () => NotificationService.sendRegistrationWelcome(user));
 
+    await AuditService.record(req, "role.set", { type: "user", id: req.user._id }, { role: req.body.role });
+
     return res.status(200).json({
       status: "success",
       message: "Set role successfully.",
@@ -338,6 +341,8 @@ export async function resetPassword(req: Request, res: Response) {
     await UserService.updatePasswordAndClearReset(user._id, hash);
 
     await bestEffort("revoke sessions after password reset", async () => SocketService.disconnectUser(user._id.toString()));
+
+    await AuditService.record(req, "password.reset", { type: "user", id: user._id }, { byEmail: user.email });
 
     return res.status(200).json({
       status: "success",

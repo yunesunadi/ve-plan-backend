@@ -6,7 +6,6 @@ import { migration as m004 } from "./004-drop-event-date-index";
 import { migration as m005 } from "./005-user-token-version";
 import { migration as m006 } from "./006-email-log-queue-fields";
 import { migration as m007 } from "./007-notification-retention-ttl";
+import { migration as m008 } from "./008-audit-log-indexes";
 
-// Every migration, in the order it must run. Append new entries; never
-// reorder or remove.
-export const migrations: Migration[] = [m001, m002, m003, m004, m005, m006, m007];
+export const migrations: Migration[] = [m001, m002, m003, m004, m005, m006, m007, m008];

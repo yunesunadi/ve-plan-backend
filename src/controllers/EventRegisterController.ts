@@ -8,6 +8,7 @@ import * as EventService from "../services/EventService";
 import * as EventInviteService from "../services/EventInviteService";
 import * as MeetingService from "../services/MeetingService";
 import * as UserService from "../services/UserService";
+import * as AuditService from "../services/AuditService";
 
 export async function register(req: any, res: Response) {
   try {
@@ -300,6 +301,13 @@ export async function approveRegister(req: any, res: Response) {
       const user: any = usersById.get(id);
       return { _id: id, name: user?.name };
     });
+
+    if (approvedIds.length > 0) {
+      await AuditService.record(req, "register.approve", { type: "event", id: req.body.event_id }, {
+        approved: approvedIds.length,
+        skipped: skippedIds.length,
+      });
+    }
 
     return res.status(200).json({
       status: "success",

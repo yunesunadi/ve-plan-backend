@@ -4,6 +4,8 @@ import { parsePaging, pageMeta } from "../helpers/paging";
 import { verifyImageFile, removeUpload } from "../helpers/uploads";
 import { hashPassword, comparePassword, dummyCompare } from "../helpers/password";
 import * as UserService from "../services/UserService";
+import * as EventService from "../services/EventService";
+import * as AuditService from "../services/AuditService";
 import * as SocketService from "../libs/socket";
 import { signAuthToken } from "../helpers/authToken";
 
@@ -202,6 +204,8 @@ export async function updatePassword(req: any, res: Response) {
     SocketService.disconnectUser(req.user._id);
     const token = signAuthToken(updated);
 
+    await AuditService.record(req, "password.change", { type: "user", id: req.user._id });
+
     return res.status(200).json({
       status: "success",
       message: "Update password successfully.",
@@ -254,8 +258,12 @@ export async function deleteAccount(req: any, res: Response) {
       });
     }
 
+    const ownedEvents = await EventService.countByOwner(req.user._id);
+
     await UserService.deleteAccount(req.user._id);
     SocketService.disconnectUser(req.user._id);
+
+    await AuditService.record(req, "account.delete", { type: "user", id: req.user._id }, { ownedEvents });
 
     return res.status(200).json({
       status: "success",

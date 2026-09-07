@@ -75,6 +75,18 @@ export const initializeSocket = (server: HTTPServer) => {
   });
 }
 
+export const getConnectionCount = (): number => io?.engine?.clientsCount ?? 0;
+
+export const closeSockets = async () => {
+  if (!io) return;
+  try {
+    await io.close();
+    logger.info("socket.io server closed");
+  } catch (error) {
+    logger.error({ err: error }, "error closing socket.io server");
+  }
+};
+
 export const disconnectUser = (userId: string) => {
   if (!io) return;
   try {

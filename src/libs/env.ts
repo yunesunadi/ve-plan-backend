@@ -4,6 +4,7 @@ const REQUIRED_IN_PRODUCTION = [
   "FRONTEND_URL",
   "CORS_ORIGIN",
   "PRIVATE_KEY_PATH",
+  "METRICS_TOKEN",
 ];
 
 export function assertEnv() {

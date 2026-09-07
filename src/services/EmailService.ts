@@ -273,6 +273,14 @@ export async function retrySweep(): Promise<void> {
   }
 }
 
+export async function queueDepth(): Promise<number> {
+  const [pending, retryableFailed] = await Promise.all([
+    EmailLog.countDocuments({ status: "pending" }),
+    EmailLog.countDocuments({ status: "failed", retryable: true }),
+  ]);
+  return pending + retryableFailed;
+}
+
 export async function statusForEvent(
   eventId: string
 ): Promise<{ sent: number; pending: number; failed: number; retryableFailed: number }> {

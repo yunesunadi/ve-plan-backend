@@ -142,3 +142,6 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/node
+
+# Local database backup archives (see scripts/mongo-backup.sh, docs/RUNBOOK.md)
+backups/

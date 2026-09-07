@@ -7,6 +7,7 @@ import * as EventInviteService from "../services/EventInviteService";
 import * as ParticipantService from "../services/ParticipantService";
 import * as EmailService from "../services/EmailService";
 import * as NotificationService from "../services/NotificationService";
+import * as AuditService from "../services/AuditService";
 
 function formatWindowTime(ms: number): string {
   return new Date(ms).toISOString();
@@ -179,6 +180,10 @@ export async function create(req: any, res: Response) {
         message: "Error creating meeting.",
       });
     }
+
+    await AuditService.record(req, "meeting.create", { type: "event", id: req.body.event }, {
+      meetingId: meeting._id?.toString(),
+    });
 
     return res.status(201).json({
       status: "success",
@@ -443,6 +448,11 @@ export async function endMeeting(req: any, res: Response) {
       ParticipantService.closeDanglingForEvent(meeting.event._id, now)
     );
     await notifyMeetingAttendees(req.params.id, meeting.event.title, "meeting_ended");
+
+    await AuditService.record(req, "meeting.end", { type: "event", id: req.params.id }, {
+      meetingId: meeting._id?.toString(),
+      duration,
+    });
 
     return res.status(200).json({
       status: "success",
