@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npx tsc && nodemon dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\"",
-    "build": "npx tsc && cp -r src/email_templates dist/email_templates",
+    "build": "npx tsc && rm -rf dist/email_templates && cp -r src/email_templates dist/email_templates",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "migrate": "npm run build && node dist/migrations/cli.js",
