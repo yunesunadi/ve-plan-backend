@@ -113,6 +113,12 @@ const NOTIFICATION_ACTIONS = new Set([
   "meeting_ended",
 ]);
 
+export const EVENT_EMAIL_ACTIONS = [
+  "register_approved",
+  "invitation_sent",
+  "meeting_started",
+] as const;
+
 function unsubscribeHeaders(action: string): Record<string, string> | undefined {
   if (!NOTIFICATION_ACTIONS.has(action)) return undefined;
   const address = process.env.UNSUBSCRIBE_EMAIL || process.env.SENDER;
@@ -282,23 +288,27 @@ export async function queueDepth(): Promise<number> {
 }
 
 export async function statusForEvent(
-  eventId: string
+  eventId: string,
+  action?: string
 ): Promise<{ sent: number; pending: number; failed: number; retryableFailed: number }> {
+  const scope: Record<string, unknown> = { event: eventId };
+  if (action) scope.action = action;
+
   const [sent, pending, failed, retryableFailed] = await Promise.all([
-    EmailLog.countDocuments({ event: eventId, status: "sent" }),
-    EmailLog.countDocuments({ event: eventId, status: "pending" }),
-    EmailLog.countDocuments({ event: eventId, status: "failed" }),
-    EmailLog.countDocuments({ event: eventId, status: "failed", retryable: true }),
+    EmailLog.countDocuments({ ...scope, status: "sent" }),
+    EmailLog.countDocuments({ ...scope, status: "pending" }),
+    EmailLog.countDocuments({ ...scope, status: "failed" }),
+    EmailLog.countDocuments({ ...scope, status: "failed", retryable: true }),
   ]);
 
   return { sent, pending, failed, retryableFailed };
 }
 
-export async function requeueFailedForEvent(eventId: string): Promise<number> {
-  const failed = await EmailLog.find(
-    { event: eventId, status: "failed", retryable: true },
-    { _id: 1 }
-  ).limit(REQUEUE_BATCH);
+export async function requeueFailedForEvent(eventId: string, action?: string): Promise<number> {
+  const scope: Record<string, unknown> = { event: eventId, status: "failed", retryable: true };
+  if (action) scope.action = action;
+
+  const failed = await EmailLog.find(scope, { _id: 1 }).limit(REQUEUE_BATCH);
 
   if (failed.length === 0) return 0;
 

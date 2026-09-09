@@ -2,7 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import { body } from "express-validator";
 import passport from "passport";
-import { imageUpload } from "../helpers/uploads";
+import { imageUpload, uploadErrorHandler } from "../helpers/uploads";
 import { authLimiter, passwordResetLimiter } from "../middlewares/rateLimit";
 import { PASSWORD_MIN_LENGTH, isCommonPassword } from "../helpers/password";
 const router = express.Router();
@@ -70,7 +70,7 @@ const startOAuth = (provider: "google" | "facebook", scope: string[]) =>
     return passport.authenticate(provider, { scope, state })(req, res, next);
   };
 
-router.post("/register", authLimiter, profile_upload.single("profile"), register_validation, AuthController.register);
+router.post("/register", authLimiter, profile_upload.single("profile"), uploadErrorHandler, register_validation, AuthController.register);
 router.post("/login", authLimiter, login_validation, AuthController.login);
 router.post("/role", role_validation, jwtAuth, AuthController.role)
 router.post("/verify_email", AuthController.verify);

@@ -1,7 +1,8 @@
 import express from "express";
-import { body } from "express-validator";
-import { imageUpload } from "../helpers/uploads";
+import { body, query } from "express-validator";
+import { imageUpload, uploadErrorHandler } from "../helpers/uploads";
 import { objectIdParam, handleValidation } from "../helpers/validate";
+import { EVENT_EMAIL_ACTIONS } from "../services/EmailService";
 const router = express.Router();
 const EventController = require("../controllers/EventController");
 const SessionController = require("../controllers/SessionController");
@@ -32,7 +33,9 @@ const create_validation = [
 
 const cover_upload = imageUpload("covers");
 
-router.post("/", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, EventController.create);
+const email_action_validation = (chain: any) => chain.optional().isIn(EVENT_EMAIL_ACTIONS).withMessage("Invalid email action.");
+
+router.post("/", cover_upload.single("cover"), uploadErrorHandler, create_validation, jwtAuth, organizerAuth, EventController.create);
 router.get("/events_by_query", jwtAuth, EventController.getAllByQuery);
 router.get("/own", jwtAuth, organizerAuth, EventController.getMyEvents);
 router.get("/organizer_summary", jwtAuth, organizerAuth, EventController.getOrganizerSummary);
@@ -41,9 +44,9 @@ router.get("/my", jwtAuth, attendeeAuth, EventController.getAttendeeEvents);
 router.get("/", jwtAuth, EventController.getAll);
 router.get("/:id", jwtAuth, EventController.getOneById);
 router.get("/:id/sessions", objectIdParam("id", "event"), handleValidation, jwtAuth, SessionController.getForEvent);
-router.put("/:id", cover_upload.single("cover"), create_validation, jwtAuth, organizerAuth, eventOwnerAuth, EventController.update);
+router.put("/:id", cover_upload.single("cover"), uploadErrorHandler, create_validation, jwtAuth, organizerAuth, eventOwnerAuth, EventController.update);
 router.delete("/:id", jwtAuth, organizerAuth, eventOwnerAuth, EventController.deleteOne);
-router.get("/:id/email_status", jwtAuth, organizerAuth, eventOwnerAuth, EventController.getEmailStatus);
-router.post("/:id/email_retry", jwtAuth, organizerAuth, eventOwnerAuth, EventController.retryEmails);
+router.get("/:id/email_status", email_action_validation(query("action")), jwtAuth, organizerAuth, eventOwnerAuth, EventController.getEmailStatus);
+router.post("/:id/email_retry", email_action_validation(body("action")), jwtAuth, organizerAuth, eventOwnerAuth, EventController.retryEmails);
 
 export default router;

@@ -1,6 +1,6 @@
 import express from "express";
 import { body } from "express-validator";
-import { imageUpload } from "../helpers/uploads";
+import { imageUpload, uploadErrorHandler } from "../helpers/uploads";
 import { sensitiveActionLimiter } from "../middlewares/rateLimit";
 import { PASSWORD_MIN_LENGTH, isCommonPassword } from "../helpers/password";
 const router = express.Router();
@@ -29,7 +29,7 @@ const profile_upload = imageUpload("profiles");
 
 router.get("/has_role", jwtAuth, UserController.hasRole);
 router.get("/", jwtAuth, UserController.getAllById);
-router.put("/", jwtAuth, profile_upload.single("profile"), edit_profile_validation, UserController.update);
+router.put("/", jwtAuth, profile_upload.single("profile"), uploadErrorHandler, edit_profile_validation, UserController.update);
 router.put("/password", jwtAuth, update_password_validation, UserController.updatePassword);
 router.delete("/", sensitiveActionLimiter, delete_account_validation, jwtAuth, UserController.deleteAccount);
 router.get("/attendees", jwtAuth, organizerAuth, UserController.getAttendeesByNameOrEmail);

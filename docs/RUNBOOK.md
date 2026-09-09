@@ -18,7 +18,9 @@ the root `PROJECT_SPEC.md` / `CLAUDE.md` (architecture).
   frontend environment).
 - **Uploads** (event covers, profile photos) are written to `dist/photos/` on
   local disk and served at `/api/v1/static`. **These are not in git and not in
-  the DB backup** — see §4.4.
+  the DB backup** — see §4.4. The app caps uploads at 5 MB (`MAX_UPLOAD_BYTES`);
+  Nginx must allow at least that much (`client_max_body_size 6m;`) or it returns
+  its own HTML `413` before the request reaches Node — see §7.
 - **Email** goes out through Gmail SMTP directly (`EmailService`), backed by the
   durable `EmailLog` queue + a 5-minute retry sweep.
 - **Background workers** (all in-process, `setInterval`, `.unref()`ed): participant
@@ -226,6 +228,7 @@ Prometheus/Grafana Agent at it later (the format is scrape-ready).
 | `/health` `503`, `mongo_up 0` | Mongo down / network | Restart `mongod`; check disk (§ below); the API self-recovers when Mongo returns. |
 | `email_queue_depth` climbing, verification mails not arriving | Gmail daily send cap (500–2000) exhausted — often by one large approve-all | Wait for the 24 h window to reset; long-term move to a transactional provider (SendGrid/Resend keys exist in old `.env` but are **not** read by current code). |
 | Disk full | `dist/photos/` uploads + `backups/` + `logs/` growth | Prune old backups (retention), rotate `logs/`, check upload volume. |
+| Image upload fails with an HTML `413 Request Entity Too Large` (not the JSON `{ "message": "Image must be 5 MB or smaller." }`) | Nginx `client_max_body_size` is below the app's 5 MB upload cap (`MAX_UPLOAD_BYTES` in `helpers/uploads.ts`) — the proxy rejects the body before Node sees it | Set `client_max_body_size 6m;` on the `/backend/` `location` (or `server`) block and `nginx -s reload`. Keep it slightly above 5 MB for multipart overhead. The JSON 413 from Multer is the correct in-app response. |
 | All sessions logged out after a deploy | Migration `005` ran (first `tokenVersion` deploy) — expected once | None — communicate to users. |
 | Meeting won't start / "invalid token" | 8x8 `PRIVATE_KEY_PATH` / `JITSI_API_KEY` wrong or key rotated | Verify the `.pem` path and key id; restart. |
 | Every request `401` right after config change | `JWT_SECRET` changed — invalidates all tokens | Intentional only for a secret rotation; otherwise restore the old secret. |

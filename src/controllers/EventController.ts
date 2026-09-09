@@ -343,7 +343,8 @@ export async function getEmailStatus(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const status = await EmailService.statusForEvent(req.params.id as string);
+    const action = typeof req.query.action === "string" ? req.query.action : undefined;
+    const status = await EmailService.statusForEvent(req.params.id as string, action);
 
     return res.status(200).json({
       status: "success",
@@ -363,7 +364,8 @@ export async function retryEmails(req: any, res: Response) {
   try {
     if (isRequestInvalid(req, res)) return;
 
-    const requeued = await EmailService.requeueFailedForEvent(req.params.id as string);
+    const action = typeof req.body.action === "string" ? req.body.action : undefined;
+    const requeued = await EmailService.requeueFailedForEvent(req.params.id as string, action);
 
     return res.status(200).json({
       status: "success",
