@@ -59,7 +59,10 @@ app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 app.use(
   PREFIX + "/static",
   express.static(path.join(__dirname, "../dist/photos"), {
-    setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
   })
 );
 
